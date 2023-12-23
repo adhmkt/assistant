@@ -2,6 +2,15 @@ from flask import Flask, render_template
 from flask_socketio import SocketIO, emit
 from flask_cors import CORS
 from openai import OpenAI
+from dotenv import load_dotenv
+
+import json
+
+with open('config.json', 'r') as config_file:
+    config = json.load(config_file)
+    my_api_key = config['openai_api_key']
+
+
 
 app = Flask(__name__)
 CORS(app)
@@ -12,8 +21,8 @@ instructions = ""
 current_temperature = 0.1  # Default temperature
 current_max_tokens = 500   # Default max tokens
 
-api_key = "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"  # Replace with your actual OpenAI API key
-client = OpenAI(api_key=api_key)
+
+client = OpenAI(api_key=my_api_key)
 
 def truncate_context(messages, max_length=4097):
     total_length = sum(len(message['content']) for message in messages)
