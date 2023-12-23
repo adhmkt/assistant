@@ -1,0 +1,277 @@
+/* Global Styles */
+body, html {
+    height: 100%;
+    margin: 0;
+    font-family: 'Arial', sans-serif;
+    background-color: #15202b; /* Deep blue-grey background */
+}
+
+.container {
+    width: 80%;
+    max-width: 1200px;
+    margin: 20px auto;
+    background-color: #1c1e22; /* Dark grey for the main container */
+    box-shadow: 0 2px 4px rgba(255, 255, 255, 0.1); /* Subtle white glow */
+    border-radius: 5px;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    height: 80vh;
+}
+
+.top-bar {
+    background-color: #0a84ff; /* Bright blue from the logo */
+    color: white;
+    padding: 10px 20px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+
+.top-bar img {
+    height: 50px;
+}
+
+.model-select {
+    padding: 5px 10px;
+    border-radius: 5px;
+    border: none;
+    background-color: #313339;
+    color: #d0d0d0;
+    margin-left: auto;
+}
+
+.chat-window {
+    flex-grow: 1;
+    overflow-y: auto;
+    padding: 20px;
+    background-color: #121417;
+}
+
+.chat-message {
+    padding: 10px;
+    margin-bottom: 10px;
+    border-radius: 8px;
+    background-color: #202225;
+    color: white;
+    display: block;
+    width: 100%;
+    box-sizing: border-box;
+    word-wrap: break-word;
+}
+
+.user-message, .bot-message {
+    display: block;
+    width: 100%;
+    text-align: left;
+    margin: 0; /* Resetting margins */
+}
+
+.bot-message {
+    background-color: #2b2f33; /* Lighter tone for bot messages */
+}
+
+.user-message {
+    background-color: #202225; /* Same as .chat-message for consistency */
+}
+
+.input-area {
+    padding: 10px 20px; /* Add more padding for better spacing */
+    background-color: #1c1e22;
+    display: flex;
+    flex-wrap: wrap; /* Allow the elements to wrap */
+    gap: 10px; /* Add gaps between the elements */
+    align-items: center;
+    justify-content: space-between;
+    border-top: 1px solid #333; /* Adds a subtle border for separation */
+}
+
+#message-text {
+    flex-grow: 1;
+    padding: 10px;
+    margin-right: 10px; /* Added margin to the right */
+    border-radius: 4px;
+    border: 1px solid #313339;
+    background-color: #313339;
+    color: white;
+    font-size: 1em;
+}
+
+.input-area label {
+    cursor: pointer;
+    background-color: #0a84ff;
+    color: white;
+    padding: 8px 12px;
+    border-radius: 4px;
+    margin-right: 10px;
+}
+
+.input-area button {
+    padding: 10px 15px;
+    background-color: #313339;
+    color: #d0d0d0;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    flex-grow: 0; /* Prevents buttons from growing */
+    flex-shrink: 0; /* Prevents buttons from shrinking */
+    margin-right: 10px; /* Add margin to the right of each button */
+}
+
+.input-area button:last-child {
+    margin-right: 0; /* Removes margin for the last button */
+}
+
+.input-area button:hover {
+    background-color: #0a84ff;
+    color: white;
+}
+
+input[type="file"] {
+    display: none;
+}
+
+input, button, select {
+    font-size: 1em;
+}
+
+input:focus, button:focus, select:focus {
+    outline: none;
+}
+
+::placeholder {
+    color: #d0d0d0;
+}
+
+#input-wrapper {
+    flex-grow: 1;
+    display: flex;
+    align-items: center;
+    justify-content: space-between; /* Space out the elements */
+}
+
+#spinner {
+    border: 4px solid rgba(255, 255, 255, 0.3); /* Lighter grey for the spinner circle */
+    border-top: 4px solid #3498db; /* Blue color for the spinner indicator */
+    border-radius: 50%;
+    width: 30px;
+    height: 30px;
+    animation: spin 2s linear infinite;
+    margin-right: 10px;
+    margin-left: 10px; /* Add margin to create space between text box and spinner */
+    display: none; /* Do not display the spinner by default */
+}
+
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+
+/* New Styles for Instruction Textarea and Button */
+#instruction-text {
+    flex-grow: 1; /* Allow textarea to take up available space */
+    padding: 10px; /* Padding for text area */
+    border-radius: 4px;
+    border: 1px solid #313339; /* Subtle border for textarea */
+    background-color: #313339;
+    color: white;
+    font-size: 1em;
+    resize: vertical; /* Only allow vertical resizing */
+    min-height: 38px; /* Set a minimum height for the textarea */
+    max-height: 100px; /* Set a maximum height for the textarea */
+    margin: 0; /* Reset margin */
+}
+
+#submit-instructions {
+    padding: 10px 15px;
+    background-color: #0a84ff; /* Blue color for submit button */
+    color: white;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    white-space: nowrap; /* Prevent the button text from wrapping */
+    margin: 0; /* Reset margin */
+}
+
+/* Media Query for Responsiveness */
+@media (max-width: 768px) {
+    .input-area {
+        justify-content: center; /* Center elements on smaller screens */
+    }
+
+    #instruction-text,
+    #submit-instructions {
+        width: 100%; /* Full width on smaller screens */
+        margin-top: 5px;
+        margin-bottom: 5px;
+    }
+
+    #submit-instructions {
+        margin-left: 0;
+    }
+}
+
+.settings-area {
+    padding: 10px 20px;
+    background-color: #1c1e22; /* Match the container background */
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    border-top: 1px solid #333; /* Adds a subtle border for separation */
+    margin-top: 10px; /* Space from the preceding element */
+    flex-wrap: wrap; /* Wrap items on smaller screens */
+}
+
+.settings-area label {
+    color: white;
+    margin-right: 10px;
+}
+
+.settings-area input[type="number"] {
+    padding: 10px;
+    border-radius: 4px;
+    border: 1px solid #313339;
+    background-color: #313339;
+    color: white;
+    margin-right: 10px;
+    width: 100px; /* Fixed width for number inputs */
+}
+
+#update-settings {
+    padding: 10px 15px;
+    background-color: #0a84ff; /* Bright blue to stand out */
+    color: white;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: background-color 0.3s ease; /* Transition for hover effect */
+}
+
+#update-settings:hover {
+    background-color: #007bff; /* Slightly lighter blue on hover */
+}
+
+#temperature-value {
+    color: white; /* Set text color to white */
+    margin-left: 8px; /* Add some space between the slider and the value display */
+    font-weight: bold; /* Optional: makes the number stand out more */
+}
+
+
+/* Responsive Design for Settings Area */
+@media (max-width: 768px) {
+    .settings-area {
+        justify-content: center;
+    }
+
+    .settings-area label,
+    .settings-area input[type="number"],
+    #update-settings {
+        width: 100%; /* Full width on smaller screens */
+        margin-bottom: 10px; /* Space between stacked items */
+    }
+
+    .settings-area label {
+        margin-right: 0;
+    }
+}
