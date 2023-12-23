@@ -247,7 +247,9 @@ input:focus, button:focus, select:focus {
     transition: background-color 0.3s ease; /* Transition for hover effect */
 }
 
-
+#update-settings:hover {
+    background-color: #007bff; /* Slightly lighter blue on hover */
+}
 
 #temperature-value {
     color: white; /* Set text color to white */
