@@ -56,20 +56,33 @@ def handle_update_settings(settings):
     current_max_tokens = settings['maxTokens']
     print('Updated settings: Temperature -', current_temperature, 'Max Tokens -', current_max_tokens)
 
+
+
+
 @socketio.on('message')
 def handle_message(message):
     print('Received message:', message)
-    global conversation_history
+    global conversation_history, instructions
 
     messages = []
 
+    # Always include instructions in the conversation history if set
     if instructions:
         messages.append({"role": "system", "content": instructions})
 
+    # Add the existing conversation history
     messages.extend(conversation_history)
+
+    # Add the new user message
     messages.append({"role": "user", "content": message})
+
+    # Ensure the conversation history doesn't exceed the maximum token limit
     messages = truncate_context(messages)
 
+    # Log the messages being sent to the API
+    print("Sending to API:", json.dumps(messages, indent=4))
+
+    # API call to OpenAI with the updated messages
     response = client.chat.completions.create(
         model="gpt-3.5-turbo",
         messages=messages,
@@ -79,10 +92,14 @@ def handle_message(message):
     )
 
     bot_response = response.choices[0].message.content
+
+    # Update conversation history with both user message and bot response
     conversation_history.append({"role": "user", "content": message})
     conversation_history.append({"role": "system", "content": bot_response})
+
     emit('response', {'response': bot_response})
     print('Bot Response:', bot_response)
 
 if __name__ == '__main__':
     socketio.run(app, debug=True)
+
