@@ -1,0 +1,122 @@
+[
+    {
+        "prompt": "What time does your store open?",
+        "completion": " Our store opens at 9:00 AM every day."
+    },
+    {
+        "prompt": "Can I return a product I bought online in-store?",
+        "completion": " Yes, you can return online purchases at any of our store locations."
+    },
+    {
+        "prompt": "Do you offer gift wrapping services?",
+        "completion": " Yes, we offer complimentary gift wrapping for most items."
+    },
+    {
+        "prompt": "Is there a warranty on your electronic products?",
+        "completion": " All our electronic products come with a one-year warranty."
+    },
+    {
+        "prompt": "How can I track my order?",
+        "completion": " You can track your order using the tracking link sent in your confirmation email."
+    },
+    {
+        "prompt": "Do you have any stores outside the United States?",
+        "completion": " Currently, all our stores are located within the United States."
+    },
+    {
+        "prompt": "How do I apply for a job at your company?",
+        "completion": " You can apply for a job by visiting the Careers section on our website."
+    },
+    {
+        "prompt": "What payment methods do you accept?",
+        "completion": " We accept all major credit cards, PayPal, and store gift cards."
+    },
+    {
+        "prompt": "How do I reset my account password?",
+        "completion": " You can reset your password by clicking on the 'Forgot Password' link on our login page."
+    },
+    {
+        "prompt": "Can I change my order after placing it?",
+        "completion": " Orders can be changed within one hour of placement by contacting our customer service."
+    },
+    {
+        "prompt": "Do you offer discounts for bulk purchases?",
+        "completion": " Yes, we offer discounts on bulk purchases. Please contact our sales team for more details."
+    },
+    {
+        "prompt": "What is your policy on data privacy?",
+        "completion": " We take data privacy seriously and comply with all relevant data protection regulations."
+    },
+    {
+        "prompt": "Are your products environmentally friendly?",
+        "completion": " We strive to ensure that our products are made using environmentally friendly practices."
+    },
+    {
+        "prompt": "Can I buy a gift card online?",
+        "completion": " Yes, you can purchase gift cards on our website."
+    },
+    {
+        "prompt": "Do you have wheelchair accessible stores?",
+        "completion": " Yes, all our stores are wheelchair accessible."
+    },
+    {
+        "prompt": "What is your return policy for online purchases?",
+        "completion": " You can return online purchases within 30 days of receipt for a full refund."
+    },
+    {
+        "prompt": "How long does shipping usually take?",
+        "completion": " Shipping typically takes 3-5 business days."
+    },
+    {
+        "prompt": "Do you have a loyalty program?",
+        "completion": " Yes, we have a loyalty program that rewards regular customers with points and discounts."
+    },
+    {
+        "prompt": "Are there any upcoming sales?",
+        "completion": " Please check our website or subscribe to our newsletter for information on upcoming sales."
+    },
+    {
+        "prompt": "Can I reserve a product online to pick up in-store?",
+        "completion": " Yes, you can reserve products online for in-store pickup."
+    },
+    {
+        "prompt": "Do you offer international shipping?",
+        "completion": " Yes, we offer international shipping to select countries."
+    },
+    {
+        "prompt": "How can I contact customer service?",
+        "completion": " You can contact customer service via phone, email, or live chat on our website."
+    },
+    {
+        "prompt": "What should I do if I receive a damaged product?",
+        "completion": " If you receive a damaged product, please contact us immediately for a replacement or refund."
+    },
+    {
+        "prompt": "Do you sell gift sets?",
+        "completion": " Yes, we offer a variety of gift sets for different occasions."
+    },
+    {
+        "prompt": "Can I change the delivery address after placing my order?",
+        "completion": " You can change the delivery address within one hour of placing your order."
+    },
+    {
+        "prompt": "How do I cancel my order?",
+        "completion": " You can cancel your order by contacting our customer service within one hour of order placement."
+    },
+    {
+        "prompt": "Do you offer installation services for your products?",
+        "completion": " We offer installation services for certain products. Please check the product details for more information."
+    },
+    {
+        "prompt": "Is there a restocking fee for returned items?",
+        "completion": " There is no restocking fee for returned items in their original condition."
+    },
+    {
+        "prompt": "Can I sign up for a product waiting list?",
+        "completion": " Yes, you can sign up for a waiting list for out-of-stock products on our website."
+    },
+    {
+        "prompt": "Do you offer expedited shipping?",
+        "completion": " Yes, we offer expedited shipping options for an additional fee."
+    }
+]

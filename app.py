@@ -84,7 +84,7 @@ def handle_message(message):
 
     # API call to OpenAI with the updated messages
     response = client.chat.completions.create(
-        model="gpt-3.5-turbo",
+        model="gpt-4-1106-preview",
         messages=messages,
         temperature=current_temperature,
         max_tokens=current_max_tokens,
