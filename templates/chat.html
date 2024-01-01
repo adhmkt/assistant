@@ -23,10 +23,11 @@
             <!-- Wrapper div for the select element -->
             <div class="model-select-wrapper">
                 <select id="model-select" class="model-select">
-                    <option value="model1">Model 1</option>
-                    <option value="model2">Model 2</option>
-                    <!-- Additional model options -->
-                </select>
+                    {% for item in data %}
+                        <option value="{{ item.id }}">{{ item.name }}</option>
+                    {% endfor %}
+                </select>  
+               
             </div>
         </div>
         

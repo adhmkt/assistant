@@ -26,7 +26,15 @@ user_threads = {}
 
 @app.route('/')
 def index():
-    return render_template('chat.html')
+    with open('assistants_config.json', 'r') as file:
+        data = json.load(file)
+    return render_template('chat.html', data=data)
+    #return render_template('chat.html')
+
+def dropdown():
+    with open('assistants_config copy.json', 'r') as file:
+        data = json.load(file)
+        return render_template('dropdown.html', data=data)
 
 @socketio.on('connect')
 def handle_connect():
