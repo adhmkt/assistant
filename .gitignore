@@ -7,6 +7,10 @@ __pycache__/
 *.so
 
 config.json
+.ipynb
+
+openai_helper.py
+
 
 # Distribution / packaging
 .env

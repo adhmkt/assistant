@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>Chat Application</title>
+    <title>Assistente de RH</title>
    
     <script src="https://cdn.jsdelivr.net/npm/showdown/dist/showdown.min.js"></script>
 
@@ -17,10 +17,18 @@
 
 </head>
 <body>
+
+    <div class="top-bar">
+        <h1>{{ assistant_name }}</h1>
+
+       
+       
+    </div>
+
     <div class="container">
-        <div class="top-bar">
+        <!-- <div class="top-bar">
             <img src="{{ url_for('static', filename='images/logo.png') }}" alt="Company Logo">
-            <!-- Wrapper div for the select element -->
+             Wrapper div for the select element  
             <div class="model-select-wrapper">
                 <select id="model-select" class="model-select">
                     {% for item in data %}
@@ -29,7 +37,7 @@
                 </select>  
                
             </div>
-        </div>
+        </div> -->
         
 
         <div class="chat-window">
@@ -71,13 +79,18 @@
             
             <label for="max-tokens">Max Tokens:</label>
             <input type="number" id="max-tokens" name="max-tokens" min="1" step="1" value="500">
-            
+            <input type="hidden" id="selected-assistant-id" value="{{ selected_assistant_id }}">
             <button id="update-settings">Update Settings</button>
         </div>
         
         
 
     </div>
+
+    <script type="text/javascript">
+        const params = new URLSearchParams(window.location.search);
+        const assistantIdFromUrl = params.get('assistant_ID');
+    </script>
 
     <script>
 

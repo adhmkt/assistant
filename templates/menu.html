@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Web App Onboarding</title>
+    <link rel="stylesheet" href="static/css/style.css">
+   
+</head>
+<body>
+    <div class="top-bar">
+        <h1>Assistente de RH</h1>
+
+       
+        <a href="/asst_mR8mXP8ARHS93vEsZrWx6Wp9" class="button-27" role="button">Assistant 1</a>
+
+    </div>
+
+    
+
+    <div class="container">
+
+        <button class="accordion">Links</button>
+        <div class="panel">
+            <ul>
+                <li><a href="/asst_mR8mXP8ARHS93vEsZrWx6Wp9">Assistant 1</a></li>
+            </ul>
+        </div>
+
+        <button class="accordion">About Us</button>
+        <div class="panel">
+            <p>This is where you can add information about your team and your company.</p>
+        </div>
+
+        <button class="accordion">FAQ</button>
+        <div class="panel">
+            <p>Here you can list some frequently asked questions and answers.</p>
+        </div>
+
+        <button class="accordion">Documentation</button>
+        <div class="panel">
+            <p>Detailed guides and documentation about how to use the app can be placed here.</p>
+        </div>
+    </div>
+
+    <footer class="settings-area">
+        <p>Web App Onboarding © 2024</p>
+    </footer>
+
+    <script>
+        var acc = document.getElementsByClassName("accordion");
+        var i;
+
+        for (i = 0; i < acc.length; i++) {
+            acc[i].addEventListener("click", function() {
+                this.classList.toggle("active");
+                var panel = this.nextElementSibling;
+                if (panel.style.display === "block") {
+                    panel.style.display = "none";
+                } else {
+                    panel.style.display = "block";
+                }
+            });
+        }
+    </script>
+</body>
+</html>

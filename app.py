@@ -1,104 +1,157 @@
-from flask import Flask, render_template
-from flask_socketio import SocketIO, emit
+from flask import Flask, render_template, request
+from flask_socketio import SocketIO, emit, join_room
 from flask_cors import CORS
 from openai import OpenAI
-from dotenv import load_dotenv
-
 import json
 
+# Load OpenAI API Key
 with open('config.json', 'r') as config_file:
     config = json.load(config_file)
     my_api_key = config['openai_api_key']
 
-
-
+# Initialize Flask and SocketIO
 app = Flask(__name__)
 CORS(app)
-socketio = SocketIO(app)
+socketio = SocketIO(app, async_mode='threading')
 
-conversation_history = []
-instructions = ""
-current_temperature = 0.1  # Default temperature
-current_max_tokens = 500   # Default max tokens
-
-
+# OpenAI client setup
 client = OpenAI(api_key=my_api_key)
 
-def truncate_context(messages, max_length=4097):
-    total_length = sum(len(message['content']) for message in messages)
-    while total_length > max_length and len(messages) > 1:
-        messages.pop(0)  # Remove the oldest message
-        total_length = sum(len(message['content']) for message in messages)
-    return messages
+# Store threads and assistant IDs by user session ID
+user_threads = {}
+user_assistant_ids = {}
+default_assistant_id = 'asst_mR8mXP8ARHS93vEsZrWx6Wp9'
+title = "My Assistant Title"
 
 @app.route('/')
-def index():
-    return render_template('chat.html')
+@app.route('/assistants')
+def assistant_links():
+    return render_template('menu.html')
+
+@app.route('/<assistant_id>')
+def index(assistant_id=None):
+    # Use the provided assistant ID or the default one
+    assistant_id = assistant_id or default_assistant_id
+    
+    # Retrieve the list of assistants from the OpenAI API
+    my_assistants = client.beta.assistants.list(
+        order="desc",
+        limit="20",
+    )
+    # Convert the list of assistants to a JSON-like structure
+    assistants_data = [{"id": asst.id, "name": asst.name} for asst in my_assistants.data]
+
+    # Find the assistant's name by the provided assistant ID
+    assistant_name = next((asst['name'] for asst in assistants_data if asst['id'] == assistant_id), "Unknown Assistant")
+
+    # Render the chat template, passing the assistants data, selected assistant ID, and assistant name to the template
+    return render_template('chat.html', data=assistants_data, selected_assistant_id=assistant_id, assistant_name=assistant_name)
+
+
+def get_assistant_name_by_id(assistant_id):
+    # Retrieve the list of assistants from the OpenAI API
+    my_assistants = client.beta.assistants.list(
+        order="desc",
+        limit="20",
+    )
+    # Convert the list of assistants to a JSON-like structure
+    assistants_data = [{"id": asst.id, "name": asst.name} for asst in my_assistants.data]
+
+    # Find the assistant by ID and return its name
+    for assistant in assistants_data:
+        if assistant['id'] == assistant_id:
+            return assistant['name']
+    return None  # Return None if the assistant is not found
 
 @socketio.on('connect')
 def handle_connect():
     print('Socket.IO connected')
+    join_room(request.sid)
+
+    # Retrieve the assistant ID from the request's query parameters or use the default
+    assistant_id = request.args.get('assistant_id', default_assistant_id)
+    user_assistant_ids[request.sid] = assistant_id
+
+    print(f"Assistant ID for user {request.sid}: {assistant_id}")
+    try:
+        thread = client.beta.threads.create()
+        user_threads[request.sid] = thread.id
+        print("Thread created for new user:", thread.id)
+    except Exception as e:
+        print(f"Error creating thread: {e}")
 
 @socketio.on('disconnect')
 def handle_disconnect():
     print('Socket.IO disconnected')
+    # Clean up user session data
+    user_threads.pop(request.sid, None)
+    user_assistant_ids.pop(request.sid, None)
 
-@socketio.on('set_instructions')
-def handle_set_instructions(message):
-    global instructions
-    instructions = message.strip()
-    print('Instructions set:', instructions)
+@socketio.on('change_assistant')
+def handle_change_assistant(data):
+    # Update the assistant ID for the user session
+    user_assistant_ids[request.sid] = data['assistant_id']
+    print(f"Assistant ID for user {request.sid} changed to: {data['assistant_id']}")
 
-@socketio.on('update_settings')
-def handle_update_settings(settings):
-    global current_temperature, current_max_tokens
-    current_temperature = settings['temperature']
-    current_max_tokens = settings['maxTokens']
-    print('Updated settings: Temperature -', current_temperature, 'Max Tokens -', current_max_tokens)
+def get_bot_response(thread_id, message, assistant_id):
+    try:
+        # Send the user's message to the thread
+        client.beta.threads.messages.create(
+            thread_id=thread_id,
+            role="user",
+            content=message
+        )
+        print("Message sent to thread")
 
+        # Run the assistant on the thread
+        run = client.beta.threads.runs.create(
+            thread_id=thread_id,
+            assistant_id=assistant_id
+        )
+        print("Run created:", run)
 
+        # Poll for the assistant's response
+        while True:
+            run = client.beta.threads.runs.retrieve(
+                thread_id=thread_id,
+                run_id=run.id
+            )
+            if run.status == 'completed':
+                break
+            socketio.sleep(1)  # Non-blocking sleep
 
+        # Retrieve all messages from the thread
+        messages_response = client.beta.threads.messages.list(
+            thread_id=thread_id
+        )
+
+        # Extract the bot's response from the messages
+        for msg in messages_response.data:
+            if msg.role == 'assistant':
+                return " ".join(content.text.value for content in msg.content if hasattr(content, 'text'))
+
+    except Exception as e:
+        print(f"Error in getting bot response: {e}")
+        return "Sorry, an error occurred."
+
+def send_bot_response(thread_id, message, sid):
+    assistant_id = user_assistant_ids.get(sid)
+    if assistant_id:
+        response = get_bot_response(thread_id, message, assistant_id)
+        socketio.emit('response', {'response': response}, room=sid)
+    else:
+        # Handle the case where the assistant ID is not found
+        print(f"No assistant ID found for user session {sid}")
+        socketio.emit('response', {'response': "Assistant ID not set."}, room=sid)
 
 @socketio.on('message')
 def handle_message(message):
     print('Received message:', message)
-    global conversation_history, instructions
-
-    messages = []
-
-    # Always include instructions in the conversation history if set
-    if instructions:
-        messages.append({"role": "system", "content": instructions})
-
-    # Add the existing conversation history
-    messages.extend(conversation_history)
-
-    # Add the new user message
-    messages.append({"role": "user", "content": message})
-
-    # Ensure the conversation history doesn't exceed the maximum token limit
-    messages = truncate_context(messages)
-
-    # Log the messages being sent to the API
-    print("Sending to API:", json.dumps(messages, indent=4))
-
-    # API call to OpenAI with the updated messages
-    response = client.chat.completions.create(
-        model="gpt-4-1106-preview",
-        messages=messages,
-        temperature=current_temperature,
-        max_tokens=current_max_tokens,
-        top_p=1
-    )
-
-    bot_response = response.choices[0].message.content
-
-    # Update conversation history with both user message and bot response
-    conversation_history.append({"role": "user", "content": message})
-    conversation_history.append({"role": "system", "content": bot_response})
-
-    emit('response', {'response': bot_response})
-    print('Bot Response:', bot_response)
+    thread_id = user_threads.get(request.sid)
+    if thread_id:
+        socketio.start_background_task(send_bot_response, thread_id, message, request.sid)
+    else:
+        emit('response', {'response': "No active thread found. Please reconnect."})
 
 if __name__ == '__main__':
     socketio.run(app, debug=True)
