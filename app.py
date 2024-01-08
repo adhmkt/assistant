@@ -3,11 +3,12 @@ from flask_socketio import SocketIO, emit, join_room
 from flask_cors import CORS
 from openai import OpenAI
 import json
+import os
 
 # Load OpenAI API Key
-with open('config.json', 'r') as config_file:
-    config = json.load(config_file)
-    my_api_key = config['openai_api_key']
+
+
+my_api_key = os.environ.get('OPENAI_API_KEY')
 
 # Initialize Flask and SocketIO
 app = Flask(__name__)
