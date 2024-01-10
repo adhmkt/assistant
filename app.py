@@ -31,8 +31,8 @@ CORS(app)
 def make_celery(app):
     celery = Celery(
         app.import_name,
-        backend=app.config['REDIS_URL'],
-        broker=app.config['REDIS_URL']
+        backend=app.config['REDIS_TLS_URL'],
+        broker=app.config['REDIS_TLS_URL']
     )
     celery.conf.update(app.config)
     return celery
