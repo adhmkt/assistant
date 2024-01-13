@@ -7,6 +7,7 @@ import logging
 from celery.result import AsyncResult
 import time
 from dotenv import load_dotenv
+import traceback
 
 load_dotenv()
 
@@ -168,24 +169,57 @@ def get_assistant_name_by_id(assistant_id):
     return None  # Return None if the assistant is not found
 
 
+# @app.route('/chat', methods=['POST'])
+# def handle_chat():
+#     data = request.json
+#     message = data.get('message')
+#     sid = data.get('sid')  # Placeholder for session management
+#     # assistant_id = data.get('assistant_id', default_assistant_id) 
+#     assistant_id = data.get('assistant_id') 
+#     thread_id = user_threads.get(sid)
+
+#      # Create a new thread for the chat session if it doesn't exist
+#     if sid not in user_threads:
+#         thread = client.beta.threads.create()
+#         user_threads[sid] = thread.id
+#     thread_id = user_threads[sid]
+
+#      # Call the asynchronous task
+#     task = get_bot_response.delay(thread_id, message, assistant_id)
+#     return jsonify({'task_id': task.id})  # Return the task ID for status checking
+
+
+
+
 @app.route('/chat', methods=['POST'])
 def handle_chat():
-    data = request.json
-    message = data.get('message')
-    sid = data.get('sid')  # Placeholder for session management
-    # assistant_id = data.get('assistant_id', default_assistant_id) 
-    assistant_id = data.get('assistant_id') 
-    thread_id = user_threads.get(sid)
+    try:
+        data = request.json
+        app.logger.info('Received chat data: %s', data)
+        message = data.get('message')
+        sid = data.get('sid')  # Placeholder for session management
+        assistant_id = data.get('assistant_id') 
+        thread_id = user_threads.get(sid)
 
-     # Create a new thread for the chat session if it doesn't exist
-    if sid not in user_threads:
-        thread = client.beta.threads.create()
-        user_threads[sid] = thread.id
-    thread_id = user_threads[sid]
+        # Create a new thread for the chat session if it doesn't exist
+        if sid not in user_threads:
+            thread = client.beta.threads.create()
+            user_threads[sid] = thread.id
+            app.logger.info('New thread created: %s', thread.id)
+        thread_id = user_threads[sid]
 
-     # Call the asynchronous task
-    task = get_bot_response.delay(thread_id, message, assistant_id)
-    return jsonify({'task_id': task.id})  # Return the task ID for status checking
+        # Call the asynchronous task
+        task = get_bot_response.delay(thread_id, message, assistant_id)
+        app.logger.info('Celery task initiated with ID: %s', task.id)
+        return jsonify({'task_id': task.id})  # Return the task ID for status checking
+
+    except Exception as e:
+        app.logger.error('Error in /chat endpoint: %s', str(e))
+        app.logger.error('Traceback: %s', traceback.format_exc())
+        return jsonify({'error': 'An error occurred'}), 500
+
+
+
 
 print("Redis URL:", app.config['REDIS_URL'])
 
