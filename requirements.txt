@@ -13,4 +13,6 @@ click==8.1.7
 certifi==2023.11.17
 openai==1.6.1
 celery==5.3.6
+redis
+
 
