@@ -5,25 +5,57 @@
     <title>Assistente de RH</title>
    
     <script src="https://cdn.jsdelivr.net/npm/showdown/dist/showdown.min.js"></script>
+    <script src="//cdnjs.cloudflare.com/ajax/libs/socket.io/4.0.0/socket.io.js"></script>
+   
+<script src="/static/js/script.jsclear"></script>
     <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
-    <!-- Removed Socket.IO script -->
+  <!-- Include marked library -->
+ 
 
     <!-- Include marked library -->
+    
+
 </head>
 <body>
 
-    <div class="top-bar">
+    <div class="top-bar"><!--  -->
+        <button id="info-panel-btn" >Como usar >></button>
+        
         <h1>{{ assistant_name }}</h1>
+        <img src="static/images/vesper.png">
+        
+            
+            <!-- Existing elements -->
+        
+        
+       
     </div>
+   
+
+    <div id="info-panel" class="info-panel">
+        <button id="close-panel-btn">Fechar</button>
+        <h2></h2> <!-- Placeholder for the assistant's name -->
+        <img src="" alt="Assistant Image" style="width: 100%;"> <!-- Placeholder for the assistant's image -->
+        <p></p> <!-- Placeholder for the assistant's description -->
+    </div>
+    
 
     <div class="container">
+     
+        
+        
+        
         <div class="chat-window">
             <!-- Chat messages will be displayed here -->
+            
+
+
         </div>
 
         <div class="input-area">
             <div id="input-wrapper">
-                <input type="text" id="message-text" placeholder="Type your message here...">
+                <input type="text" id="message-text" placeholder="Escreva aqui...">
+                <!-- Add the spinner here -->
                 <div id="spinner" class="spinner"></div>
             </div>
         
@@ -35,30 +67,66 @@
             <input type="file" id="image-input" hidden onchange="uploadImage()">
         
             <!-- Send button -->
-            <button id="send-button">Send</button>
-            <button id="clear-button">Clear</button>
-            <input type="hidden" id="selected-assistant-id" value="{{ selected_assistant_id }}">
+            <button id="send-button">Enviar</button>
+            <button id="clear-button">Limpar</button>
+             <input type="hidden" id="selected-assistant-id" value="{{ selected_assistant_id }}">
+           
         </div>
+
+        
+
         
         <!-- <div class="input-area">
             <label for="instruction-text">Instructions:</label>
             <textarea id="instruction-text" rows="2" placeholder="Enter instructions for the bot..."></textarea>
             <button id="submit-instructions">Submit Instructions</button>
-            
-        </div> -->
+        </div>
 
-        <!-- <div class="settings-area">
+        <div class="settings-area">
             <label for="temperature">Temperature:</label>
             <input type="range" id="temperature" name="temperature" min="0" max="1" step="0.01" value="0.1">
             <span id="temperature-value">0.1</span>
             
             <label for="max-tokens">Max Tokens:</label>
             <input type="number" id="max-tokens" name="max-tokens" min="1" step="1" value="500">
-            
             <button id="update-settings">Update Settings</button>
-        </div> -->
+        </div>  -->
+        
+      
     </div>
 
+    <script type="text/javascript">
+        const params = new URLSearchParams(window.location.search);
+        const assistantIdFromUrl = params.get('assistant_ID');
+    </script>
+
+    <script>
+
+        
+        var socket = io.connect('http://' + document.domain + ':' + location.port);
+
+        // Function to append messages to the chat window
+        function appendMessageToChatWindow(sender, text) {
+            if (typeof text !== 'undefined' && text !== null) {  // Check if the text is not undefined and not null
+                const chatWindow = document.querySelector('.chat-window');
+                const messageDiv = document.createElement('div');
+                messageDiv.classList.add('chat-message');
+                messageDiv.textContent = `${sender} ${text}`;
+                chatWindow.appendChild(messageDiv);
+                chatWindow.scrollTop = chatWindow.scrollHeight; // Scroll to the latest message
+            }
+        }
+
+        // Listen for responses from the server
+        socket.on('response', function(msg) {
+            console.log('Received response:', msg);  // Log the entire msg object
+            if (msg.response) {  // Check if msg.response is defined
+                appendMessageToChatWindow('Bot', msg.response);
+            }
+        });
+
+        
+    </script>
     <script src="{{ url_for('static', filename='js/script.js') }}"></script>
 </body>
 </html>

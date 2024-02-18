@@ -1,0 +1,87 @@
+{
+    "assistants": [
+      {
+        "assistant_id": "asst_mR8mXP8ARHS93vEsZrWx6Wp9",
+        "assistant_name": "Assistente Geral",
+        "assistant_img_url": "asst_mR8mXP8ARHS93vEsZrWx6Wp9.png",
+        "assistant_desc": "<p>Dúvidas sobre qualquer assunto? É só perguntar.</p>"
+      },
+      {
+        "assistant_id": "asst_JAmbrmXBvZijfVs60xZOoHsb",
+        "assistant_name": "Gerador de Prompts",
+        "assistant_img_url": "asst_JAmbrmXBvZijfVs60xZOoHsb.png",
+        "assistant_desc": "<p>Este bot vai te ajudar a criar o prompt perfeito.</p>"
+      },
+      {
+        "assistant_id": "asst_VC3xRgLNgmn2eK1hlkbksZEU",
+        "assistant_name": "Criador de Cursos",
+        "assistant_img_url": "asst_VC3xRgLNgmn2eK1hlkbksZEU.png",
+        "assistant_desc": "<p>Este bot vai te ajudar a realizar aquela idéia que você tem para um curso.</p>"
+      },
+      {
+        "assistant_id": "asst_EqAalSJxe0GoObAG9nCKZmkC",
+        "assistant_name": "Gerador de Imagens - Lego",
+        "assistant_img_url": "asst_EqAalSJxe0GoObAG9nCKZmkC.png",
+        "assistant_desc": "<p>Crie imagens incríveis, tudo com Lego</p>"
+      },
+
+      {
+        "assistant_id": "asst_gttDe6H5MYZSUuC25sj1LMyB",
+        "assistant_name": "Designer de Móveis",
+        "assistant_img_url": "asst_gttDe6H5MYZSUuC25sj1LMyB.png",
+        "assistant_desc": "<p>Crie móveis incríveis, com a ajuda teste bot.</p>"
+      },
+
+      {
+        "assistant_id": "asst_PVLonIVPAgd2m6SsJfScW9Rz",
+        "assistant_name": "Converse com a Constituiçao De 1988",
+        "assistant_img_url": "asst_PVLonIVPAgd2m6SsJfScW9Rz.png",
+        "assistant_desc": "<p>Todo mundo deveria conhecer a Constituição Cidadã. Converse com ela.</p>"
+      },
+
+      {
+        "assistant_id": "asst_rRFxyCR9OcZ9iHCS3XOon3dx",
+        "assistant_name": "Mestre Dos Quiz",
+        "assistant_img_url": "asst_rRFxyCR9OcZ9iHCS3XOon3dx.png",
+        "assistant_desc": "<p>Gosta de Quiz? Venha testar seus conhecimentos sobre vários assuntos</p>"
+      },
+
+      {
+        "assistant_id": "asst_biDoJ2G5Pi0o99hZwlCMMXER",
+        "assistant_name": "CLT - Seus Direitos",
+        "assistant_img_url": "asst_biDoJ2G5Pi0o99hZwlCMMXER.png",
+        "assistant_desc": "<p>Converse com a CLT e conheça seus direitos ( e deveres) trabalhistas</p>"
+      },
+
+      {
+        "assistant_id": "asst_5eMxplAw5RivRe2nxZHCmV6j",
+        "assistant_name": "Vendedor De Carros Usados",
+        "assistant_img_url": "asst_5eMxplAw5RivRe2nxZHCmV6j.png",
+        "assistant_desc": "<p>Comprar um carro ficou muito mais fácil.</p>"
+      },
+
+      {
+        "assistant_id": "asst_GrbuSIOWWBGBlAVKm3xh5FO2",
+        "assistant_name": "Converse Com Figuras Históricas",
+        "assistant_img_url": "asst_GrbuSIOWWBGBlAVKm3xh5FO2.png",
+        "assistant_desc": "<p>Já pensou em conversar com Einstein, Colombo, Gandhi ? Agora você pode.</p>"
+      },
+
+      {
+        "assistant_id": "asst_8GgjksgGPjFfKboEeBkmL0kw",
+        "assistant_name": "Criador De Logos",
+        "assistant_img_url": "asst_8GgjksgGPjFfKboEeBkmL0kw.png",
+        "assistant_desc": "<p>Esse bot vai the ajudar o logo ideal pro seu negócio.</p>"
+      },
+
+      {
+        "assistant_id": "asst_sEHnPaUnPT5YL30pQKm7nDJC",
+        "assistant_name": "Ideias Para Modelismo - Revell",
+        "assistant_img_url": "asst_sEHnPaUnPT5YL30pQKm7nDJC.png",
+        "assistant_desc": "<p>Precisando de ideias para criar aquela cena incrível com modelos tipo Revell ?</p>"
+      }
+      
+      
+    ]
+  }
+  
