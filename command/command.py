@@ -51,7 +51,9 @@ class GenerateImageCommand(Command):
             # Construct the proxied image URL using your server's proxy endpoint
             # Replace 'your_server_url' with the actual URL of your server
             # For example, if deploying to Heroku: 'https://your-app-name.herokuapp.com/image_proxy?url='
-            proxy_endpoint = "http://127.0.0.1:5000/image_proxy?url="       
+            # proxy_endpoint = "http://127.0.0.1:5000/image_proxy?url="   
+            proxy_endpoint = "https://assistants-7db57357ad18.herokuapp.com/image_proxy?url="  
+              
             proxied_image_url = proxy_endpoint + encoded_image_url
  
         except Exception as e:
