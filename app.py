@@ -23,8 +23,7 @@ app = cors(app, allow_origin="*")
 my_api_key = os.getenv('OPENAI_API_KEY')
 client = OpenAI(api_key=my_api_key)
 
-app = Quart(__name__)
-app = cors(app, allow_origin="*")
+
 sio = socketio.AsyncServer(async_mode='asgi')
 sio_app = socketio.ASGIApp(sio, app)
 
@@ -326,3 +325,4 @@ async def send_bot_response(thread_id, message, sid , assistant_id):
 if __name__ == "__main__":
     # uvicorn.run("app:sio_app", host="127.0.0.1", port=5000, reload=True)
     pass
+
