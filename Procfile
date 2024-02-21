@@ -1,3 +1,1 @@
-web: gunicorn -t 120 app:app
-worker: celery -A app.celery worker --loglevel=info
-
+web: uvicorn app:sio_app --host=0.0.0.0 --port=$PORT
