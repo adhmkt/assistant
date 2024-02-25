@@ -9,10 +9,10 @@ document.addEventListener('DOMContentLoaded', () => {
             const assistantData = await response.json();
     
             // Assuming you have elements in your HTML to populate with the assistant data
-            // document.querySelector('#info-panel h2').textContent = assistantData.assistant_name;
-            // document.querySelector('#info-panel p').innerHTML = assistantData.assistant_desc;
-            // // If you have an <img> tag in your side panel for the assistant's image
-            // document.querySelector('#info-panel img').src = `/static/images/assistant_imgs/${assistantData.assistant_img_url}`;
+            document.querySelector('#info-panel h2').textContent = assistantData.assistant_name;
+            document.querySelector('#info-panel p').innerHTML = assistantData.assistant_desc;
+            // If you have an <img> tag in your side panel for the assistant's image
+            document.querySelector('#info-panel img').src = `/static/images/assistant_imgs/${assistantData.assistant_img_url}`;
 
         } catch (error) {
             console.error('Error fetching assistant data:', error);
@@ -49,35 +49,35 @@ document.addEventListener('DOMContentLoaded', () => {
  
      // Define your elements first
      const infoPanel = document.getElementById('info-panel');
-    //  const infoPanelBtn = document.getElementById('info-panel-btn');
-    //  const togglePanelBtn = document.getElementById('toggle-panel-btn');
-    //  const closePanelBtn = document.getElementById('close-panel-btn');
+     const infoPanelBtn = document.getElementById('info-panel-btn');
+     const togglePanelBtn = document.getElementById('toggle-panel-btn');
+     const closePanelBtn = document.getElementById('close-panel-btn');
  
      // Now that we've defined infoPanelBtn, we can attach the event listener
-    //  infoPanelBtn.addEventListener('click', function() {
-    //      // Toggle the info panel visibility
-    //      if (infoPanel.classList.contains('closed')) {
-    //          infoPanel.classList.remove('closed');
-    //      } else {
-    //          infoPanel.classList.add('closed');
-    //      }
-    //  });
+     infoPanelBtn.addEventListener('click', function() {
+         // Toggle the info panel visibility
+         if (infoPanel.classList.contains('closed')) {
+             infoPanel.classList.remove('closed');
+         } else {
+             infoPanel.classList.add('closed');
+         }
+     });
  
      // Function to open the panel
-    //  const openPanel = () => {
-    //      infoPanel.classList.remove('closed');
-    //      document.getElementById('toggle-container').style.display = 'none';
-    //  };
+     const openPanel = () => {
+         infoPanel.classList.remove('closed');
+         document.getElementById('toggle-container').style.display = 'none';
+     };
  
-    //  // Function to close the panel
-    //  const closePanel = () => {
-    //      infoPanel.classList.add('closed');
-    //     //  document.getElementById('toggle-container').style.display = 'block';
-    //  };
+     // Function to close the panel
+     const closePanel = () => {
+         infoPanel.classList.add('closed');
+        //  document.getElementById('toggle-container').style.display = 'block';
+     };
  
-    //  closePanelBtn.addEventListener('click', () => closePanel());
+     closePanelBtn.addEventListener('click', () => closePanel());
  
-    // //  togglePanelBtn.addEventListener('click', () => openPanel());
+    //  togglePanelBtn.addEventListener('click', () => openPanel());
    
 
 

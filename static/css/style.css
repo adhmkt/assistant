@@ -23,7 +23,7 @@ body, html {
     width: 80%;
     max-width: 1200px;
     margin: 20px auto;
-    background-color: #1c1e22; /* Dark grey for the main container */
+    background-color: white; /* Dark grey for the main container */
     box-shadow: 0 2px 4px rgba(255, 255, 255, 0.1); /* Subtle white glow */
     border-radius: 5px;
     overflow: hidden;
@@ -181,9 +181,9 @@ body, html {
 }
 
 .top-bar {
-    background-color: #83E0DC; /* Bright blue from the logo */
+    background-color: white; /* Bright blue from the logo */
     color: black;
-    padding: 5px 10px;
+    padding: 30px 10px;
     display: flex;
     align-items: center;
     justify-content: space-between;
@@ -280,7 +280,7 @@ body, html {
 
 .input-area {
     padding: 10px 20px; /* Add more padding for better spacing */
-    background-color: #83dfdc;
+    background-color: white;
     display: flex;
     flex-wrap: wrap; /* Allow the elements to wrap */
     gap: 10px; /* Add gaps between the elements */
