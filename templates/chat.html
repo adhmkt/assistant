@@ -3,6 +3,11 @@
 <head>
     <meta charset="UTF-8">
     <title>Assistente de RH</title>
+    <script>
+        function goBack() {
+          window.history.back();
+        }
+        </script>
    
     <script src="https://cdn.jsdelivr.net/npm/showdown/dist/showdown.min.js"></script>
     <script src="//cdnjs.cloudflare.com/ajax/libs/socket.io/4.0.0/socket.io.js"></script>
@@ -20,6 +25,7 @@
 
     <div class="top-bar"><!--  -->
         <!-- <button id="info-panel-btn" >Como usar >></button> -->
+        <button onclick="goBack()">Voltar</button>
         
         <h1>{{ assistant_name }}</h1>
        

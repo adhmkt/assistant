@@ -29,7 +29,7 @@ body, html {
     overflow: hidden;
     display: flex;
     flex-direction: column;
-    height: 87vh;
+    height: 90vh;
 }
 
 .info-panel {
@@ -183,10 +183,17 @@ body, html {
 .top-bar {
     background-color: white; /* Bright blue from the logo */
     color: black;
-    padding: 30px 10px;
+    padding: 10px 5px;
     display: flex;
     align-items: center;
     justify-content: space-between;
+}
+
+.top-bar button {
+    border: 1px solid #313339;
+    background-color: #B4E6E3;
+    border-radius: 10px; /* Adjust the value as needed */
+   
 }
 
 .top-bar h1 {
@@ -195,7 +202,7 @@ body, html {
     border: 1px solid #313339;
     background-color: #B4E6E3;
     border-radius: 10px; /* Adjust the value as needed */
-    padding: 10px 20px; /* Add padding for spacing */
+    padding: 5px 5px; /* Add padding for spacing */
     margin: 0; /* Reset margin */
     position: absolute;
     left: 50%;
@@ -286,7 +293,7 @@ body, html {
     gap: 10px; /* Add gaps between the elements */
     align-items: center;
     justify-content: space-between;
-    border-top: 1px solid #24ded7; 
+    
    
 }
 
