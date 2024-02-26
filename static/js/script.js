@@ -161,7 +161,7 @@ socket.on('disconnect', () => {
             e.preventDefault();
         }
     });
-    document.getElementById('clear-button').addEventListener('click', clearChat);
+    // document.getElementById('clear-button').addEventListener('click', clearChat);
     // document.getElementById('submit-instructions').addEventListener('click', sendInstructions);
 
     // temperatureInput.addEventListener('input', function() {
