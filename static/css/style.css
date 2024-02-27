@@ -426,14 +426,14 @@ input:focus, button:focus, select:focus {
 @media (max-width: 768px) {
     .top-bar {
         padding: 10px; /* Adjusted padding */
-        height: 50px; /* Specify a fixed height for consistency */
+        height: 20px; /* Specify a fixed height for consistency */
     }
 
     .chat-window {
         /* Calculate space dynamically to ensure it fits between top-bar and input-area */
         position: absolute; /* Use absolute positioning for precise control */
-        top: 60px; /* Height of the top-bar plus the desired margin */
-        bottom: 70px; /* Height of the input-area plus the desired margin, adjust this value based on your input-area's actual height */
+        top: 30px; /* Height of the top-bar plus the desired margin */
+        bottom: 10px; /* Height of the input-area plus the desired margin, adjust this value based on your input-area's actual height */
         left: 10px;
         right: 10px;
         padding: 5px;
@@ -441,6 +441,8 @@ input:focus, button:focus, select:focus {
     }
 
     .input-area {
+        left:15px;
+        width: 90%;
         padding: 10px 5px; /* Reduced padding for smaller screens */
         height: 60px; /* Specify a fixed height for consistency */
         bottom: 0; /* Ensure it's at the very bottom */
