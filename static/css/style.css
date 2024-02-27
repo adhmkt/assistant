@@ -441,19 +441,28 @@ input:focus, button:focus, select:focus {
     }
 
     .input-area {
-        left:15px;
-        width: 90%;
-        padding: 10px 5px; /* Reduced padding for smaller screens */
-        height: 60px; /* Specify a fixed height for consistency */
+        display: flex; /* Use flexbox to lay out children in a row */
+        align-items: center; /* Vertically center align items in the container */
+        justify-content: space-between; /* Space out the children */
+        padding: 10px 5px; /* Adjust padding as needed */
+        height: 60px; /* Fixed height for consistency */
+        left: 15px; /* Adjusted for positioning */
+        width: calc(100% - 30px); /* Adjust width to account for left positioning */
         bottom: 0; /* Ensure it's at the very bottom */
+        position: fixed; /* Fix position to the bottom */
+        background-color: #fff; /* Optional: Set background color */
     }
+    
 
     .input-area #message-text {
-        flex-grow: 1; /* Allow the input to fill the space */
-        margin-right: 10px; /* Ensure some space between the input and the send button */
+        width: auto; /* Allow the input to automatically fill available space */
+        flex-grow: 1; /* Grow to use available space */
+        margin-right: 10px; /* Space between input and next element */
     }
+    
 
     .input-area button {
+        white-space: nowrap; /* Prevent text wrapping in the button */
         flex-shrink: 0; /* Prevent the button from shrinking */
     }
 
