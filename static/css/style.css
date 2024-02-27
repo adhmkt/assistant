@@ -29,7 +29,7 @@ body, html {
     overflow: hidden;
     display: flex;
     flex-direction: column;
-    height: 90vh;
+    height: 95vh;
 }
 
 .info-panel {
@@ -181,12 +181,16 @@ body, html {
 }
 
 .top-bar {
-    background-color: white; /* Bright blue from the logo */
+    background-color: white;
     color: black;
     padding: 10px 5px;
     display: flex;
     align-items: center;
     justify-content: space-between;
+    position: fixed; /* Keep it fixed at the top */
+    width: 100%;
+    top: 10px;
+    z-index: 10;
 }
 
 .top-bar button {
@@ -245,6 +249,8 @@ body, html {
     overflow-y: auto;
     padding: 5px;
     background-color: white;
+    margin-top: 25px; /* Adjust this margin based on the actual height of your fixed top bar plus 10px margin */
+    margin-bottom: 10px; /* Adjust this margin based on the actual height of your fixed input area plus 10px margin */
 }
 
 .message-separator {
@@ -286,15 +292,17 @@ body, html {
 }
 
 .input-area {
-    padding: 10px 20px; /* Add more padding for better spacing */
+    padding: 10px 20px;
     background-color: white;
     display: flex;
-    flex-wrap: wrap; /* Allow the elements to wrap */
-    gap: 10px; /* Add gaps between the elements */
+    flex-wrap: wrap;
+    gap: 10px;
     align-items: center;
     justify-content: space-between;
-    
-   
+    position: fixed;
+    bottom: 0;
+    width: 70%;
+    z-index: 10;
 }
 
 #message-text {
@@ -416,8 +424,35 @@ input:focus, button:focus, select:focus {
 
 /* Media Query for Responsiveness */
 @media (max-width: 768px) {
+    .top-bar {
+        padding: 10px; /* Adjusted padding */
+        height: 50px; /* Specify a fixed height for consistency */
+    }
+
+    .chat-window {
+        /* Calculate space dynamically to ensure it fits between top-bar and input-area */
+        position: absolute; /* Use absolute positioning for precise control */
+        top: 60px; /* Height of the top-bar plus the desired margin */
+        bottom: 70px; /* Height of the input-area plus the desired margin, adjust this value based on your input-area's actual height */
+        left: 10px;
+        right: 10px;
+        padding: 5px;
+        overflow-y: auto; /* Keep overflow handling */
+    }
+
     .input-area {
-        justify-content: center; /* Center elements on smaller screens */
+        padding: 10px 5px; /* Reduced padding for smaller screens */
+        height: 60px; /* Specify a fixed height for consistency */
+        bottom: 0; /* Ensure it's at the very bottom */
+    }
+
+    .input-area #message-text {
+        flex-grow: 1; /* Allow the input to fill the space */
+        margin-right: 10px; /* Ensure some space between the input and the send button */
+    }
+
+    .input-area button {
+        flex-shrink: 0; /* Prevent the button from shrinking */
     }
 
     #instruction-text,
