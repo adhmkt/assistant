@@ -211,21 +211,21 @@ body, html {
 }
 
 .top-bar h1 {
-   
+    height: 20px;
     width: 80%;
-    border: 1px solid #313339;
-    background-color: #B4E6E3;
-    border-radius: 10px; /* Adjust the value as needed */
-    padding: 5px 5px; /* Add padding for spacing */
-    margin: 0; /* Reset margin */
+    background-color: black;
+    border-radius: 10px;
+    padding: 5px 5px;
+    margin: 0;
     position: absolute;
     left: 50%;
     transform: translateX(-50%);
-
     font-family: Roobert,-apple-system,BlinkMacSystemFont,"Segoe UI",Helvetica,Arial,sans-serif,"Apple Color Emoji","Segoe UI Emoji","Segoe UI Symbol";
     font-size: 16px;
-    font-weight:400;
-  
+    font-weight: 400;
+    color: white;
+    text-align: center; /* Center the text content */
+    box-shadow: 2px 2px 4px rgba(0, 0, 0, 0.2); /* Add shadow */
 }
 
 
@@ -302,7 +302,7 @@ body, html {
 }
 
 .input-area {
-    padding: 10px 20px;
+    padding: 10px 10px;
     background-color: white;
     display: flex;
     flex-wrap: wrap;
@@ -319,9 +319,9 @@ body, html {
     flex-grow: 1;
     padding: 10px;
     margin-right: 10px; /* Added margin to the right */
-    border-radius: 4px;
+    border-radius: 15px;
     border: 1px solid #313339;
-    background-color: #B4E5E3;
+    background-color: white;
     color: black;
     font-size: 1em;
 }
@@ -345,12 +345,11 @@ input[type="text"]::placeholder {
 }
 
 .input-area button {
-    padding: 10px 15px;
-    background-color: #B4E5E3;
-    color: black;
-    border-color: black;
     border: 1px solid #313339;
-    border-radius: 4px;
+    padding: 10px 15px;
+    background-color: white;
+    color: black;
+    border-radius: 12px;
     cursor: pointer;
     flex-grow: 0; /* Prevents buttons from growing */
     flex-shrink: 0; /* Prevents buttons from shrinking */
@@ -362,7 +361,7 @@ input[type="text"]::placeholder {
 }
 
 .input-area button:hover {
-    background-color: #72e9f2;
+    background-color: black;
     color: white;
 }
 
@@ -391,7 +390,7 @@ input:focus, button:focus, select:focus {
 
 #spinner {
     border: 4px solid rgba(255, 255, 255, 0.3); /* Lighter grey for the spinner circle */
-    border-top: 4px solid #3498db; /* Blue color for the spinner indicator */
+    border-top: 4px solid black; /* Blue color for the spinner indicator */
     border-radius: 50%;
     width: 30px;
     height: 30px;
