@@ -183,7 +183,7 @@ body, html {
 .top-bar {
     background-color: white;
     color: black;
-    padding: 10px 5px;
+    padding: 10px;
     display: flex;
     align-items: center;
     justify-content: space-between;
