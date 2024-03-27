@@ -88,7 +88,13 @@ document.addEventListener('DOMContentLoaded', () => {
     const queryString = assistantIdFromUrl ? `?assistant_id=${encodeURIComponent(assistantIdFromUrl)}&user_id=${encodeURIComponent(userIdFromUrl)}` : '';
     console.log('Query string for socket connection:', queryString);
 
-    const socketUrl = `https://${document.domain}:${location.port}${queryString}`;
+    let socketUrl;
+    if (location.port) {
+        socketUrl = `https://${document.domain}:${location.port}${queryString}`;
+    } else {
+        socketUrl = `https://${document.domain}${queryString}`;
+}
+console.log('Full socket URL:', socketUrl);
     console.log('Full socket URL:', socketUrl);
     // Verify document.domain
     console.log('Document domain:', document.domain);
