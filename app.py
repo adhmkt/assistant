@@ -12,6 +12,7 @@ from urllib.parse import parse_qs
 from command.command_registry import CommandRegistry
 from supabase import create_client, Client
 from database_manager import DatabaseManager
+from urllib.parse import quote 
 
 app = Quart(__name__)
 # Allow CORS for all domains on all routes
@@ -199,11 +200,15 @@ async def index(assistant_id=None):
     user_id = request.args.get('user_id')
 
     if user_id is None:
-        # If 'user_id' is not in session, redirect to the login page
-        assistant_id = assistant_id
-        assistant_name = request.args.get('name')
-        
-        redirect_url = url_for('login') + f"?assistant_id={assistant_id}&assistant_name={assistant_name}"
+        assistant_name = request.args.get('name', '')  # Provide a default value if 'name' is not found
+
+        # Encode the assistant_id and assistant_name to ensure the URL is valid
+        encoded_assistant_id = quote(assistant_id)
+        encoded_assistant_name = quote(assistant_name)
+
+        # Construct the URL with Quart's url_for
+        # Note: Quart's url_for is an async function, so you need to await it
+        redirect_url = await url_for('login', assistant_id=encoded_assistant_id, assistant_name=encoded_assistant_name)
         
     
         return redirect(redirect_url)
