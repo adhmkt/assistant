@@ -88,7 +88,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const queryString = assistantIdFromUrl ? `?assistant_id=${encodeURIComponent(assistantIdFromUrl)}&user_id=${encodeURIComponent(userIdFromUrl)}` : '';
     console.log('Query string for socket connection:', queryString);
 
-    const socketUrl = `${location.protocol}//${document.domain}:${location.port}${queryString}`;
+    const socketUrl = `https://${document.domain}:${location.port}${queryString}`;
     console.log('Full socket URL:', socketUrl);
 
     const socket = io.connect(socketUrl);
