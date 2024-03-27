@@ -90,6 +90,11 @@ document.addEventListener('DOMContentLoaded', () => {
 
     const socketUrl = `https://${document.domain}:${location.port}${queryString}`;
     console.log('Full socket URL:', socketUrl);
+    // Verify document.domain
+    console.log('Document domain:', document.domain);
+
+    // Verify location.port
+    console.log('Location port:', location.port);
 
     const socket = io.connect(socketUrl);
     console.log('Attempting to connect to Socket.IO with URL:', socketUrl);
