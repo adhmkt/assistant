@@ -17,8 +17,15 @@ from dotenv import load_dotenv
 import aiopg
 
 app = Quart(__name__)
-# Allow CORS for all domains on all routes
-app = cors(app, allow_origin="*")
+cors(app, allow_origin="*") 
+
+@app.before_serving
+async def before_serving():
+    global session_manager
+    # Assuming SessionManager.create() is an async factory method
+    session_manager = await SessionManager.create()
+
+
 
 
 # Assuming command_registry is a module you have for command execution
@@ -59,6 +66,7 @@ class SessionManager:
         """Asynchronous factory method to create a SessionManager instance with an initialized connection pool."""
         pool = await aiopg.create_pool(DSN)
         return cls(pool)
+    
 
     async def create_thread_for_sid(self, sid, assistant_id, user_id):
         """Creates a thread for the given session ID, assistant ID, and user ID."""
