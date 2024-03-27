@@ -13,6 +13,8 @@ from command.command_registry import CommandRegistry
 from supabase import create_client, Client
 from database_manager import DatabaseManager
 from urllib.parse import quote 
+from dotenv import load_dotenv
+import aiopg
 
 app = Quart(__name__)
 # Allow CORS for all domains on all routes
@@ -35,46 +37,73 @@ client = OpenAI(api_key=my_api_key)
 sio = socketio.AsyncServer(async_mode='asgi')
 sio_app = socketio.ASGIApp(sio, app)
 
+load_dotenv()
 
+DSN = os.getenv('DATABASE_URL')
 
 class SessionManager:
     def __init__(self):
-        self.user_threads = {}
-        self.user_assistant_ids = {}
-        self.thread_to_sid = {}
-        self.user_ids = {}
+        pass
 
     async def create_thread_for_sid(self, sid, assistant_id, user_id):
         try:
             loop = asyncio.get_running_loop()
-            # Assuming client.beta.threads.create returns a Thread-like object
             thread = await loop.run_in_executor(None, client.beta.threads.create)
-            # Access the 'id' attribute of the thread object (adjust according to the actual attribute name)
-            self.user_threads[sid] = thread.id if hasattr(thread, 'id') else None
-            self.user_assistant_ids[sid] = assistant_id
-            self.user_ids[sid] = user_id 
-            self.thread_to_sid[thread.id if hasattr(thread, 'id') else None] = sid
-            print(f"Thread created for new user: {thread.id if hasattr(thread, 'id') else 'Unknown ID'} with SID: {sid}")
+            thread_id = thread.id if hasattr(thread, 'id') else None
+            async with aiopg.create_pool(DSN) as pool:
+                async with pool.acquire() as conn:
+                    async with conn.cursor() as cur:
+                        await cur.execute("""
+                            INSERT INTO session_data (sid, user_thread_id, user_assistant_id, user_id, thread_to_sid) 
+                            VALUES (%s, %s, %s, %s, %s)
+                            ON CONFLICT (sid) DO UPDATE 
+                            SET user_thread_id = EXCLUDED.user_thread_id, user_assistant_id = EXCLUDED.user_assistant_id, 
+                                user_id = EXCLUDED.user_id, thread_to_sid = EXCLUDED.thread_to_sid, updated_at = NOW()""",
+                                          (sid, thread_id, assistant_id, user_id, json.dumps({thread_id: sid})))
+            print(f"Thread created for new user: {thread_id} with SID: {sid}")
         except Exception as e:
             print(f"Error creating thread for SID {sid}: {e}")
 
-    def get_user_id(self, sid):
-         return self.user_ids.get(sid)
+    async def get_user_id(self, sid):
+        async with aiopg.create_pool(DSN) as pool:
+            async with pool.acquire() as conn:
+                async with conn.cursor() as cur:
+                    await cur.execute("SELECT user_id FROM session_data WHERE sid = %s", (sid,))
+                    result = await cur.fetchone()
+                    return result[0] if result else None
 
-    def get_thread_id(self, sid):
-        return self.user_threads.get(sid)
+    async def get_thread_id(self, sid):
+        async with aiopg.create_pool(DSN) as pool:
+            async with pool.acquire() as conn:
+                async with conn.cursor() as cur:
+                    await cur.execute("SELECT user_thread_id FROM session_data WHERE sid = %s", (sid,))
+                    result = await cur.fetchone()
+                    return result[0] if result else None
 
-    def get_sid_by_thread_id(self, thread_id):
-        return self.thread_to_sid.get(thread_id)
+    async def get_sid_by_thread_id(self, thread_id):
+        async with aiopg.create_pool(DSN) as pool:
+            async with pool.acquire() as conn:
+                async with conn.cursor() as cur:
+                    # Assuming the structure of thread_to_sid is {"thread_id": "sid"}
+                    # Adjust the query if your data structure is different
+                    await cur.execute("SELECT sid FROM session_data WHERE thread_to_sid ->> %s IS NOT NULL", (thread_id,))
+                    result = await cur.fetchone()
+                    return result[0] if result else None
 
-    def get_assistant_id(self, sid):
-        return self.user_assistant_ids.get(sid)
+    async def get_assistant_id(self, sid):
+        async with aiopg.create_pool(DSN) as pool:
+            async with pool.acquire() as conn:
+                async with conn.cursor() as cur:
+                    await cur.execute("SELECT user_assistant_id FROM session_data WHERE sid = %s", (sid,))
+                    result = await cur.fetchone()
+                    return result[0] if result else None
 
-    def remove_session(self, sid):
-        thread_id = self.user_threads.pop(sid, None)
-        self.user_assistant_ids.pop(sid, None)
-        if thread_id:
-            self.thread_to_sid.pop(thread_id, None)
+    async def remove_session(self, sid):
+        async with aiopg.create_pool(DSN) as pool:
+            async with pool.acquire() as conn:
+                async with conn.cursor() as cur:
+                    await cur.execute("DELETE FROM session_data WHERE sid = %s", (sid,))
+                    print(f"Session data removed for SID: {sid}")
         # print(f"Session data removed for SID: {sid}")
 
 session_manager = SessionManager()
