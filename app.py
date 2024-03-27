@@ -208,7 +208,7 @@ async def index(assistant_id=None):
 
         # Construct the URL with Quart's url_for
         # Note: Quart's url_for is an async function, so you need to await it
-        redirect_url = await url_for('login', assistant_id=encoded_assistant_id, assistant_name=encoded_assistant_name)
+        redirect_url = url_for('login', assistant_id=encoded_assistant_id, assistant_name=encoded_assistant_name)
         
     
         return redirect(redirect_url)
