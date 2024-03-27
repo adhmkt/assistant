@@ -1,6 +1,12 @@
 {
     "assistants": [
       {
+        "assistant_id": "asst_XAJwe1yVbGrYimfXpBu77RD1",
+        "assistant_name": "Assistente Multimidia",
+        "assistant_img_url": "asst_mR8mXP8ARHS93vEsZrWx6Wp9.png",
+        "assistant_desc": "<p>DApresentação de Conteúdo Multimidia</p>"
+      },
+      {
         "assistant_id": "asst_mR8mXP8ARHS93vEsZrWx6Wp9",
         "assistant_name": "Assistente Geral",
         "assistant_img_url": "asst_mR8mXP8ARHS93vEsZrWx6Wp9.png",

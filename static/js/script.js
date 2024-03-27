@@ -31,11 +31,12 @@ document.addEventListener('DOMContentLoaded', () => {
     const assistantIdFromUrl = pathSegments[1]; // The first segment in the path
     
     console.log('Extracted assistantIdFromUrl:', assistantIdFromUrl);
+    
 
     // Check if assistantIdFromUrl is not null or empty and call the function
-    if (assistantIdFromUrl) {
-        fetchAndDisplayAssistantData(assistantIdFromUrl);
-    }
+    // if (assistantIdFromUrl) {
+    //     fetchAndDisplayAssistantData(assistantIdFromUrl);
+    // }
     
     
     
@@ -44,6 +45,7 @@ document.addEventListener('DOMContentLoaded', () => {
     // Extract name from URL parameters
     const params = new URLSearchParams(window.location.search);
     console.log('URL search parameters:', params.toString());
+    const userIdFromUrl = params.get('user_id');
     const nameFromUrl = params.get('name');
     
  
@@ -83,7 +85,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
 
     // Ensure assistantIdFromUrl is not null or undefined before connecting
-    const queryString = assistantIdFromUrl ? `?assistant_id=${encodeURIComponent(assistantIdFromUrl)}` : '';
+    const queryString = assistantIdFromUrl ? `?assistant_id=${encodeURIComponent(assistantIdFromUrl)}&user_id=${encodeURIComponent(userIdFromUrl)}` : '';
     console.log('Query string for socket connection:', queryString);
 
     const socketUrl = `${location.protocol}//${document.domain}:${location.port}${queryString}`;
@@ -96,6 +98,8 @@ document.addEventListener('DOMContentLoaded', () => {
 socket.on('disconnect', () => {
     console.log('Socket.IO disconnected');
 });
+
+
 
 
     function appendMessageToChatWindow(sender, text, isUser) {

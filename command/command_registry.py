@@ -7,6 +7,7 @@ class CommandRegistry:
         self.commands = {
             'generate_image': GenerateImageCommand(),
             'get_used_car_prices': GetUsedCarPricesCommand(), 
+            'authenticate_and_log': AuthenticateAndLogCommand(), 
             # Add other commands to this dictionary
         }
 

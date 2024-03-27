@@ -1,4 +1,4 @@
-from quart import Quart, render_template, websocket, request, Response, abort
+from quart import Quart, session, redirect, url_for, render_template, websocket, request, Response, abort, jsonify
 import uvicorn
 import asyncio
 import socketio
@@ -10,6 +10,8 @@ import re
 import json
 from urllib.parse import parse_qs
 from command.command_registry import CommandRegistry
+from supabase import create_client, Client
+from database_manager import DatabaseManager
 
 app = Quart(__name__)
 # Allow CORS for all domains on all routes
@@ -19,8 +21,13 @@ app = cors(app, allow_origin="*")
 # Assuming command_registry is a module you have for command execution
 
 
+
 # Load OpenAI API Key and setup the client
 my_api_key = os.getenv('OPENAI_API_KEY')
+my_supabase_key = os.getenv('SUPABASE_KEY')
+my_supabase_url = os.getenv('SUPABASE_URL')
+app.secret_key = os.getenv('MY_APP_SECRET_KEY')
+
 client = OpenAI(api_key=my_api_key)
 
 
@@ -34,8 +41,9 @@ class SessionManager:
         self.user_threads = {}
         self.user_assistant_ids = {}
         self.thread_to_sid = {}
+        self.user_ids = {}
 
-    async def create_thread_for_sid(self, sid, assistant_id):
+    async def create_thread_for_sid(self, sid, assistant_id, user_id):
         try:
             loop = asyncio.get_running_loop()
             # Assuming client.beta.threads.create returns a Thread-like object
@@ -43,11 +51,14 @@ class SessionManager:
             # Access the 'id' attribute of the thread object (adjust according to the actual attribute name)
             self.user_threads[sid] = thread.id if hasattr(thread, 'id') else None
             self.user_assistant_ids[sid] = assistant_id
+            self.user_ids[sid] = user_id 
             self.thread_to_sid[thread.id if hasattr(thread, 'id') else None] = sid
             print(f"Thread created for new user: {thread.id if hasattr(thread, 'id') else 'Unknown ID'} with SID: {sid}")
         except Exception as e:
             print(f"Error creating thread for SID {sid}: {e}")
 
+    def get_user_id(self, sid):
+         return self.user_ids.get(sid)
 
     def get_thread_id(self, sid):
         return self.user_threads.get(sid)
@@ -63,34 +74,34 @@ class SessionManager:
         self.user_assistant_ids.pop(sid, None)
         if thread_id:
             self.thread_to_sid.pop(thread_id, None)
-        print(f"Session data removed for SID: {sid}")
+        # print(f"Session data removed for SID: {sid}")
 
 session_manager = SessionManager()
 
 
 
-async def handle_function(run, thread_id, assistant_id, client, function_name, tool_arguments,tool_call_id):
-    print("Starting handle_function with hardcoded testing")
+async def handle_function(run, thread_id, assistant_id, client, function_name, tool_arguments,tool_call_id, origin_message):
+    # print("Starting handle_function with hardcoded testing")
     command_registry = CommandRegistry()
 
     # Hardcoded tool name for testing
     tool_name = function_name
 
     try:
-        print(f"Executing command: {tool_name}")
+        # print(f"Executing command: {tool_name}")
         # Directly use the hardcoded tool name and example arguments
 
         stored_prompt = prompts_storage.get(thread_id)
-        print(f'stored_prompt = {stored_prompt}')
+        # print(f'stored_prompt = {stored_prompt}')
 
-        if stored_prompt:
-            print(f"Retrieved stored prompt for thread_id {thread_id}: {stored_prompt}")
+        if stored_prompt and tool_name == 'generate_image':
+            # print(f"Retrieved stored prompt for thread_id {thread_id}: {stored_prompt}")
             tool_arguments = {'img_generation_prompt': clean_prompt(stored_prompt)}
         else:
-            print(f"No prompt stored for thread_id {thread_id}.")
-
+            # print(f"No prompt stored for thread_id {thread_id}.")
+            tool_arguments = tool_arguments
         result = await command_registry.execute_command(tool_name, tool_arguments)
-        print(f"Command executed successfully: {tool_name}, Result: {result}")
+        # print(f"Command executed successfully: {tool_name}, Result: {result}")
 
 
 
@@ -127,18 +138,39 @@ async def load_assistants():
         print("The assistants.json file was not found.")
         return []
 
-@app.route('/api/assistant/<assistant_id>')
-async def get_assistant(assistant_id):
-    assistants = await load_assistants()
-    assistant_data = next((assistant for assistant in assistants if assistant['assistant_id'] == assistant_id), None)
-    
-    if assistant_data:
-        # Directly return a Python dictionary; Quart automatically converts it to JSON
-        return assistant_data
-    else:
-        # Use Quart's abort function to return a 404 error if the assistant is not found
-        abort(404, description="Assistant not found")
 
+
+
+@app.route('/login', methods=['GET', 'POST'])
+async def login():
+    # Capture assistant_id and assistant_name from the URL query parameters, with defaults if not provided
+    assistant_id = request.args.get('assistant_id')
+    assistant_name = request.args.get('assistant_name')
+    print(f"Captured on login: assistant_id={assistant_id}, assistant_name={assistant_name}")  # Debug print
+
+    if request.method == 'POST':
+        assistant_id = (await request.form)['assistant_id']
+        assistant_name = (await request.form)['assistant_name']
+        print(f"Captured on login POST: assistant_id={assistant_id}, assistant_name={assistant_name}")  # Debug print
+
+        email = (await request.form)['email']
+        password = (await request.form)['password']
+        database_manager = DatabaseManager()
+        user_id = await database_manager.do_login(email, password)
+
+        if user_id:
+            session['user_id'] = user_id  # Store user_id in session to indicate authentication
+
+            # Construct redirect URL using the actual assistant_id and assistant_name captured from the request
+            redirect_url = url_for('index', assistant_id=assistant_id) + \
+                f"?assistant_name={assistant_name}&user_id={user_id}"
+
+            return redirect(redirect_url)
+        else:
+            return await render_template('login.html', assistant_id=assistant_id, assistant_name=assistant_name)
+    else:
+        # Pass assistant_id and assistant_name to the template to preserve them in any forms or links
+        return await render_template('login.html', assistant_id=assistant_id, assistant_name=assistant_name)
 
 @app.route('/image_proxy')
 async def image_proxy():
@@ -163,40 +195,93 @@ async def assistant_links():
 
 @app.route('/<assistant_id>')
 async def index(assistant_id=None):
+
+    user_id = request.args.get('user_id')
+
+    if user_id is None:
+        # If 'user_id' is not in session, redirect to the login page
+        assistant_id = assistant_id
+        assistant_name = request.args.get('name')
+        
+        redirect_url = url_for('login') + f"?assistant_id={assistant_id}&assistant_name={assistant_name}"
+        
+    
+        return redirect(redirect_url)
+    
     assistant_id = assistant_id
-    assistant_name = request.args.get('name')
+    assistant_name = request.args.get('assistant_name')
 
     if not assistant_name:
     # Assuming you have a function to fetch the assistant name by ID
      assistant_name = "Assistant Name Error"
     
    
-    return await render_template('chat.html', data={}, selected_assistant_id=assistant_id, assistant_name=assistant_name)
+    return await render_template('chat.html', data={}, selected_assistant_id=assistant_id, assistant_name=assistant_name, user_id=user_id)
+
+@app.route('/forms', methods=['GET', 'POST'])
+async def submit_form():
+    try:
+        data = await request.form
+        
+        user_name = data['user_name']
+        user_type = data['user_type']
+        user_school = data['user_school']
+        user_city = data['user_city']
+
+        data_manager = DatabaseManager()
+
+        
+        await data_manager.submit_form(
+            user_name=user_name, 
+            user_type=user_type, 
+            school_name=user_school, 
+            school_city=user_city
+        )
+
+        # Return a success response (adjust as needed)
+        return jsonify({"message": "Form submitted successfully"}), 200
+        
+    except Exception as e:
+        # If an error occurred during the insert operation
+        return jsonify({"error": str(e)}), 500
+
+        
+        
+
+     
 
 @sio.event
 async def connect(sid, environ):
-    print('Socket.IO connected')
+    # print('Socket.IO connected')
     await sio.enter_room(sid, room=sid)
     query_string = environ.get('QUERY_STRING', '')
-    print(f'Query String = {query_string}')
     parsed_query = parse_qs(query_string)
-    print(f'Parsed String = {parsed_query}')
+    print(f'Query String = {query_string}')
+    print(f'Parsed Query = {parsed_query}')
+
+    # print(f'Query String = {query_string}')
+    
+    # print(f'Parsed String = {parsed_query}')
     assistant_id = parsed_query.get('assistant_id', ['default_assistant_id'])[0]  # Example default ID
-    print(f'assistant_id = {assistant_id}')
-    print('Tracing Line 118')
-    await session_manager.create_thread_for_sid(sid, assistant_id)
+    user_id = parsed_query.get('user_id', ['default_user_id'])[0] 
+    print(f"USER ID AT CONNECT:  {user_id}")
+    print(f"PARSED QUERY:  {parsed_query}")
+    # print(f'assistant_id = {assistant_id}')
+    # print('Tracing Line 118')
+    await session_manager.create_thread_for_sid(sid, assistant_id,user_id)
 
 @sio.event
 async def disconnect(sid):
-    print('Socket.IO disconnected')
+    # print('Socket.IO disconnected')
     session_manager.remove_session(sid)
 
 @sio.event
 async def message(sid, data):
-    print('Received message:', data)
+    # print('Received message:', data)
     thread_id = session_manager.get_thread_id(sid)
     if thread_id:
         assistant_id = session_manager.get_assistant_id(sid)
+        
         await send_bot_response(thread_id, data, sid, assistant_id)
     else:
         await sio.emit('response', {'response': "No active thread found. Please reconnect."}, room=sid)
@@ -228,27 +313,36 @@ def clean_prompt(response_text):
         # Return an empty string or error message if the markers are not found
         return "Prompt could not be extracted."
 
-async def get_bot_response(thread_id, message, assistant_id, client):
-    print(f'Message is : {message}')
+async def get_bot_response(thread_id, user_id, message, assistant_id, client):
+    # print(f'Message is : {message}')
     try:
+        
+        # user_id = 'gfergergeeerge'
+        session_id =1
+        data_manager = DatabaseManager()
+        speaker = "user"
+        print(f"MY USER ID:  {user_id}")
+
+        await data_manager.save_chat_conversation(user_id=user_id,thread_id=thread_id,session_id=session_id,message=message, speaker=speaker, assistant_id=assistant_id)
+    
         loop = asyncio.get_running_loop()
-        print("Sending user message to the thread...")
+        # print("Sending user message to the thread...")
         # Send the user message to the thread
         await loop.run_in_executor(None, lambda: client.beta.threads.messages.create(
             thread_id=thread_id,
             role="user",
             content=message
         ))
-        print("User message sent successfully.")
+        # print("User message sent successfully.")
 
-        print("Creating a new run for the thread...")
+        # print("Creating a new run for the thread...")
         # Create a new run for the thread
         run = await loop.run_in_executor(None, lambda: client.beta.threads.runs.create(
             thread_id=thread_id,
             assistant_id=assistant_id
         ))
-        print(f"New run created: {run}")
-        print(f"New run created with run_id: {run.id}")
+        # print(f"New run created: {run}")
+        # print(f"New run created with run_id: {run.id}")
 
         handled_actions = set()  # Keep track of handled actions to prevent re-execution
 
@@ -262,17 +356,21 @@ async def get_bot_response(thread_id, message, assistant_id, client):
             if run_status.status in ['completed', 'failed']:
                 break  # Exit loop if the run is completed or failed
             if run_status.status == 'requires_action' and run.id not in handled_actions:
-                print(f"The content of the run : {run}")
+                # print(f"The content of the run : {run}")
                 tool_call = run_status.required_action.submit_tool_outputs.tool_calls[0]
+                # print(run_status.required_action.submit_tool_outputs)
+                # Parse the JSON-formatted string in the arguments attribute
+               
                 tool_call_id = tool_call.id  # This captures the needed tool_call_id
                 function_name = run.tools[0].function.name
                 # tool_call_id = run.tools[0].function_id
                 
                 # function_id = run.tools[0].function.id
-                tool_arguments = run.tools[0].function.parameters.get('properties', {}).get('user_prompt', {}).get('default', '')
+                tool_arguments = tool_call.function.arguments 
+                # tool_arguments = run.tools[0].function.parameters.get('properties', {}).get('user_prompt', {}).get('default', '')
                 handled_actions.add(run.id)  # Mark this run as handled
                 # Handle the required action
-                await handle_function(run, thread_id, assistant_id, client, function_name, tool_arguments, tool_call_id)
+                await handle_function(run, thread_id, assistant_id, client, function_name, tool_arguments, tool_call_id, message)
             await asyncio.sleep(1)  # Wait before checking the run status again
 
         
@@ -280,12 +378,15 @@ async def get_bot_response(thread_id, message, assistant_id, client):
         messages_response = await loop.run_in_executor(None, lambda: client.beta.threads.messages.list(
             thread_id=thread_id
         ))
-
-        print("Messages retrieved successfully.")
+        print(f"thread_id : {thread_id}.")
+        # print("Messages retrieved successfully.")
         # Process each assistant message to find and store the prompt with the identifier
         for msg in messages_response:
             if msg.role == 'assistant':
                 response_text = msg.content[0].text.value if hasattr(msg.content[0], 'text') else ""
+                speaker = "bot"
+                await data_manager.save_chat_conversation(user_id=user_id,thread_id=thread_id,session_id=session_id,message=response_text, speaker=speaker, assistant_id=assistant_id)
+    
                 # Check for the identifier in the response text
                 if 'prtx0345' in response_text:
                     # Assuming the entire response is relevant, otherwise, extract the specific part
@@ -301,21 +402,19 @@ async def get_bot_response(thread_id, message, assistant_id, client):
 
 
 async def send_bot_response(thread_id, message, sid , assistant_id):
-    print(message)
+   
     assistant_id = session_manager.get_assistant_id(sid)  # Make sure to call the method with sid
-
-    print("FROM send_bot_response, line 229 , assistant_ID = ", assistant_id)
-
+    user_id = session_manager.get_user_id(sid)
+    # print("FROM send_bot_response, line 229 , assistant_ID = ", assistant_id)
+    
     if assistant_id:
-        print("FROM send_bot_response, line 197")
-        print(type(message))
-        print("FROM send_bot_response, line 199")
-        response = await get_bot_response(thread_id, message, assistant_id, client)
+
+        
+        
+        response = await get_bot_response(thread_id, user_id, message, assistant_id, client)
         await sio.emit('response', {'response': response}, room=sid)
     else:
-        print("FROM send_bot_response, line 236")
-        # Handle the case where the assistant ID is not found
-        print(f"No assistant ID found for user session {sid}")
+        
         await sio.emit('response', {'response': "Assistant ID not set."}, room=sid)
 
 

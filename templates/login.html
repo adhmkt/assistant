@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+
+    <script>
+        window.onload = function() {
+            
+
+            // const pathArray = window.location.pathname.split('/');
+            // const assistantId = pathArray[pathArray.length - 1]; // Assuming the assistant_id is the last segment
+            // document.getElementById('assistant_id').value = assistantId;
+
+
+            
+            
+            const urlParams = new URLSearchParams(window.location.search);
+            const assistant_id = urlParams.get('assistant_id');
+            document.getElementById('assistant_id').value = assistant_id;
+            console.log("Hidden field value:", document.getElementById('assistant_id').value);  // Debugging line
+            const assistant_name = urlParams.get('assistant_name');
+            document.getElementById('assistant_name').value = assistant_name;
+        };
+    </script>
+
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            flex-direction: column;
+        }
+        form {
+            display: flex;
+            flex-direction: column;
+            width: 300px;
+        }
+        input {
+            margin-bottom: 10px;
+            padding: 10px;
+            font-size: 16px;
+        }
+        button {
+            padding: 10px;
+            font-size: 16px;
+            cursor: pointer;
+        }
+        .error {
+            color: red;
+            margin-bottom: 15px;
+        }
+    </style>
+</head>
+<body>
+    <h2>Login</h2>
+    {% if error %}
+        <p class="error">{{ error }}</p>
+    {% endif %}
+    <form action="/login" method="post">
+    <input type="email" name="email" placeholder="Email" required autofocus>
+    <input type="password" name="password" placeholder="Password" required>
+    <input type="hidden" name="assistant_id" id="assistant_id">
+    <input type="hidden" name="assistant_name" id="assistant_name">
+    <button type="submit">Login</button>
+</form>
+</body>
+</html>

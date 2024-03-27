@@ -13,6 +13,7 @@ openai_helper.py
 
 
 # Distribution / packaging
+myenv2/
 .env
 .Python
 build/

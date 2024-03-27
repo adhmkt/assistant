@@ -2,6 +2,7 @@
 <html lang="en">
 <head>
     <meta name="viewport" content="width=device-width, initial-scale=1">
+ 
 
     <meta charset="UTF-8">
     <title>Assistente de RH</title>
@@ -14,7 +15,7 @@
     <script src="https://cdn.jsdelivr.net/npm/showdown/dist/showdown.min.js"></script>
     <script src="//cdnjs.cloudflare.com/ajax/libs/socket.io/4.0.0/socket.io.js"></script>
    
-<script src="/static/js/script.jsclear"></script>
+<!-- <script src="/static/js/script.jsclear"></script> -->
     <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
   <!-- Include marked library -->
  
@@ -138,6 +139,33 @@
 
         
     </script>
+
+
     <script src="{{ url_for('static', filename='js/script.js') }}"></script>
+    <!-- <script src="{{ url_for('static', filename='js/script_form.js') }}"></script> -->
+    <script>
+        function submitFormData(event) {
+            event.preventDefault(); // Prevent default form submission
+    
+            const form = document.getElementById('userForm'); // Corrected form reference
+            const formData = new FormData(form);
+            const serverUrl = form.action; // Retrieve server URL dynamically from form
+    
+            fetch(serverUrl, {
+                method: "POST",
+                body: formData
+            })
+            .then(response => response.json())
+            .then(responseData => {
+                // Display response message on the page
+                const messageDiv = document.getElementById("message_div");
+                messageDiv.innerHTML = `<p>Obrigado. Iremos verificar suas informações e entraremos em contato.</p>`;
+            })
+            .catch(error => {
+                console.error("Error submitting form:", error);
+            });
+        }
+    </script>
+    
 </body>
 </html>

@@ -5,6 +5,8 @@ import os
 from openai import OpenAI
 import asyncio
 import urllib.parse
+import json
+from database_manager import DatabaseManager
 
 # Load OpenAI API Key
 my_api_key = os.environ.get('OPENAI_API_KEY')
@@ -29,7 +31,7 @@ class GenerateImageCommand(Command):
 
     async def make_image(self, prompt):
         proxied_image_url = None  # Initialize proxied_image_url
-        print(f'The prompt sent to Dalle : {prompt}')
+        # print(f'The prompt sent to Dalle : {prompt}')
         try:
             # Use asyncio's event loop to run the synchronous code in an executor
             loop = asyncio.get_event_loop()
@@ -61,7 +63,53 @@ class GenerateImageCommand(Command):
 
         return proxied_image_url
 
+class AuthenticateAndLogCommand(Command):
+    async def execute(self, arguments):
 
+        database_manager = DatabaseManager()
+        # Print each key-value pair in the arguments dictionary
+        # print("My Arguments:", arguments)
+        arguments_dict = json.loads(arguments)  # Now it's a Python dictionary
+
+        # Extract user_name and school_name
+        user_name = arguments_dict.get('user_name', '')
+        school_name = arguments_dict.get('school_name', '')
+        school_city = arguments_dict.get('school_city', '')
+        user_type = arguments_dict.get('user_type', '')
+
+        # print(f"User Name: {user_name}")
+        # print(f"School Name: {school_name}")
+        # print(f"School City: {school_city}")
+        # print(f"User Type: {user_type}")
+        
+       
+        try:
+            # Execute the RPC call and get the response object
+            response =  database_manager.authenticate_user(user_name=user_name,user_type=user_type,school_name=school_name,school_city=school_city)
+
+        
+
+            # Debug print to inspect the raw response
+            # print("Raw response:", response)
+
+            # Access the 'data' attribute of the response object
+            if response:
+
+                
+                # There are records in the 'data' attribute
+                # records = response.data
+                # print("Records found:", records)
+                return True  # Return True as a matching record is found
+            else:
+                # No records found in the 'data' attribute
+                # print("No records found in the response.")
+                return False
+        except Exception as e:
+            # Log any errors encountered during the execution
+            print(f"An error occurred: {e}")
+            return False
+
+      
 
 class GetUsedCarPricesCommand(Command):
     async def execute(self, arguments):
@@ -81,5 +129,6 @@ class GetUsedCarPricesCommand(Command):
         for car in car_prices:
             table_html += f"<tr><td>{car['make']}</td><td>{car['model']}</td><td>{car['year']}</td><td>${car['price']}</td></tr>"
         table_html += "</table>"
-
+        print("My Arguments:", arguments)
+        
         return table_html

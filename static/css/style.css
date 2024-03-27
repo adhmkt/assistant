@@ -646,5 +646,49 @@ input:focus, button:focus, select:focus {
   transform: translateY(0);
 }
 
-
-
+.form-chat-container {
+    width: 400px;
+    margin: 50px auto;
+    background-color: #fff; /* Matches the original white background */
+    padding: 20px;
+    border-radius: 15px; /* Increased to match your original design */
+    box-shadow: 0px 0px 10px rgba(0, 0, 0, 0.1);
+  }
+  
+  .form-chat-group {
+    margin-bottom: 20px;
+  }
+  
+  .form-chat-label {
+    display: block;
+    margin-bottom: 5px;
+    font-weight: bold;
+    color: black; /* Ensures the text color is black */
+  }
+  
+  .form-chat-input[type="text"],
+  .form-chat-input[type="email"],
+  .form-chat-input[type="password"] {
+    width: calc(100% - 20px); /* Adjusted padding consideration */
+    padding: 10px; /* Increased to match your original design */
+    margin-right: 10px; /* Added to maintain consistency in spacing */
+    border: 1px solid #313339; /* Color adjusted to match your design */
+    border-radius: 15px; /* Increased to match your original design */
+    background-color: white; /* Ensures the background is white */
+    color: black; /* Ensures the text color is black */
+  }
+  
+  .form-chat-submit {
+    background-color: #007bff;
+    color: #fff;
+    border: none;
+    padding: 10px 20px;
+    border-radius: 15px; /* Increased to match your original design */
+    cursor: pointer;
+    font-size: 1em; /* Adjusted to use em for consistency with your original */
+  }
+  
+  .form-chat-submit:hover {
+    background-color: #0056b3;
+  }
+  
