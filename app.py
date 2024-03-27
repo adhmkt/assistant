@@ -175,7 +175,7 @@ async def handle_function(run, thread_id, assistant_id, client, function_name, t
         )
 
         # Directly handle and send the response without using a queue
-        sid = session_manager.get_sid_by_thread_id(thread_id)
+        sid = await session_manager.get_sid_by_thread_id(thread_id)
         if sid:
            
             #await sio.emit('response', {'response': result}, room=sid)
@@ -331,14 +331,14 @@ async def connect(sid, environ):
 @sio.event
 async def disconnect(sid):
     # print('Socket.IO disconnected')
-    session_manager.remove_session(sid)
+    await session_manager.remove_session(sid)
 
 @sio.event
 async def message(sid, data):
     # print('Received message:', data)
-    thread_id = session_manager.get_thread_id(sid)
+    thread_id = await session_manager.get_thread_id(sid)
     if thread_id:
-        assistant_id = session_manager.get_assistant_id(sid)
+        assistant_id = await session_manager.get_assistant_id(sid)
         
         await send_bot_response(thread_id, data, sid, assistant_id)
     else:
@@ -461,8 +461,8 @@ async def get_bot_response(thread_id, user_id, message, assistant_id, client):
 
 async def send_bot_response(thread_id, message, sid , assistant_id):
    
-    assistant_id = session_manager.get_assistant_id(sid)  # Make sure to call the method with sid
-    user_id = session_manager.get_user_id(sid)
+    assistant_id = await session_manager.get_assistant_id(sid)  # Make sure to call the method with sid
+    user_id = await session_manager.get_user_id(sid)
     # print("FROM send_bot_response, line 229 , assistant_ID = ", assistant_id)
     
     if assistant_id:
