@@ -472,6 +472,4 @@ async def send_bot_response(thread_id, message, sid , assistant_id):
 
 
 if __name__ == "__main__":
-     #uvicorn.run("app:sio_app", host="127.0.0.1", port=5000, reload=True)
-    pass
-
+     pass
