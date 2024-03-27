@@ -41,72 +41,82 @@ load_dotenv()
 
 DSN = os.getenv('DATABASE_URL')
 
+async def main():
+    session_manager = await SessionManager.create()
+
 class SessionManager:
-    def __init__(self):
-        pass
+    def __init__(self, pool):
+        self.pool = pool
+
+    @classmethod
+    async def create(cls):
+        """Asynchronous factory method to create a SessionManager instance with an initialized connection pool."""
+        pool = await aiopg.create_pool(DSN)
+        return cls(pool)
 
     async def create_thread_for_sid(self, sid, assistant_id, user_id):
+        """Creates a thread for the given session ID, assistant ID, and user ID."""
         try:
+            # Example logic to create a thread (replace with your actual thread creation logic)
             loop = asyncio.get_running_loop()
-            thread = await loop.run_in_executor(None, client.beta.threads.create)
-            thread_id = thread.id if hasattr(thread, 'id') else None
-            async with aiopg.create_pool(DSN) as pool:
-                async with pool.acquire() as conn:
-                    async with conn.cursor() as cur:
-                        await cur.execute("""
-                            INSERT INTO session_data (sid, user_thread_id, user_assistant_id, user_id, thread_to_sid) 
-                            VALUES (%s, %s, %s, %s, %s)
-                            ON CONFLICT (sid) DO UPDATE 
-                            SET user_thread_id = EXCLUDED.user_thread_id, user_assistant_id = EXCLUDED.user_assistant_id, 
-                                user_id = EXCLUDED.user_id, thread_to_sid = EXCLUDED.thread_to_sid, updated_at = NOW()""",
-                                          (sid, thread_id, assistant_id, user_id, json.dumps({thread_id: sid})))
+            thread = await loop.run_in_executor(None, lambda: "thread-id-placeholder")  # Mock thread creation
+            thread_id = thread if thread else None
+
+            # Use the connection pool for database operations
+            async with self.pool.acquire() as conn:
+                async with conn.cursor() as cur:
+                    await cur.execute("""
+                        INSERT INTO session_data (sid, user_thread_id, user_assistant_id, user_id, thread_to_sid) 
+                        VALUES (%s, %s, %s, %s, %s)
+                        ON CONFLICT (sid) DO UPDATE 
+                        SET user_thread_id = EXCLUDED.user_thread_id, user_assistant_id = EXCLUDED.user_assistant_id, 
+                            user_id = EXCLUDED.user_id, thread_to_sid = EXCLUDED.thread_to_sid, updated_at = NOW()""",
+                                      (sid, thread_id, assistant_id, user_id, json.dumps({thread_id: sid})))
             print(f"Thread created for new user: {thread_id} with SID: {sid}")
         except Exception as e:
             print(f"Error creating thread for SID {sid}: {e}")
 
     async def get_user_id(self, sid):
-        async with aiopg.create_pool(DSN) as pool:
-            async with pool.acquire() as conn:
-                async with conn.cursor() as cur:
-                    await cur.execute("SELECT user_id FROM session_data WHERE sid = %s", (sid,))
-                    result = await cur.fetchone()
-                    return result[0] if result else None
+        """Retrieves the user ID for the given session ID."""
+        async with self.pool.acquire() as conn:
+            async with conn.cursor() as cur:
+                await cur.execute("SELECT user_id FROM session_data WHERE sid = %s", (sid,))
+                result = await cur.fetchone()
+                return result[0] if result else None
 
     async def get_thread_id(self, sid):
-        async with aiopg.create_pool(DSN) as pool:
-            async with pool.acquire() as conn:
-                async with conn.cursor() as cur:
-                    await cur.execute("SELECT user_thread_id FROM session_data WHERE sid = %s", (sid,))
-                    result = await cur.fetchone()
-                    return result[0] if result else None
+        """Retrieves the thread ID for the given session ID."""
+        async with self.pool.acquire() as conn:
+            async with conn.cursor() as cur:
+                await cur.execute("SELECT user_thread_id FROM session_data WHERE sid = %s", (sid,))
+                result = await cur.fetchone()
+                return result[0] if result else None
 
     async def get_sid_by_thread_id(self, thread_id):
-        async with aiopg.create_pool(DSN) as pool:
-            async with pool.acquire() as conn:
-                async with conn.cursor() as cur:
-                    # Assuming the structure of thread_to_sid is {"thread_id": "sid"}
-                    # Adjust the query if your data structure is different
-                    await cur.execute("SELECT sid FROM session_data WHERE thread_to_sid ->> %s IS NOT NULL", (thread_id,))
-                    result = await cur.fetchone()
-                    return result[0] if result else None
+        """Retrieves the session ID for the given thread ID."""
+        async with self.pool.acquire() as conn:
+            async with conn.cursor() as cur:
+                await cur.execute("SELECT sid FROM session_data WHERE thread_to_sid ->> %s IS NOT NULL", (thread_id,))
+                result = await cur.fetchone()
+                return result[0] if result else None
 
     async def get_assistant_id(self, sid):
-        async with aiopg.create_pool(DSN) as pool:
-            async with pool.acquire() as conn:
-                async with conn.cursor() as cur:
-                    await cur.execute("SELECT user_assistant_id FROM session_data WHERE sid = %s", (sid,))
-                    result = await cur.fetchone()
-                    return result[0] if result else None
+        """Retrieves the assistant ID for the given session ID."""
+        async with self.pool.acquire() as conn:
+            async with conn.cursor() as cur:
+                await cur.execute("SELECT user_assistant_id FROM session_data WHERE sid = %s", (sid,))
+                result = await cur.fetchone()
+                return result[0] if result else None
 
     async def remove_session(self, sid):
-        async with aiopg.create_pool(DSN) as pool:
-            async with pool.acquire() as conn:
-                async with conn.cursor() as cur:
-                    await cur.execute("DELETE FROM session_data WHERE sid = %s", (sid,))
-                    print(f"Session data removed for SID: {sid}")
-        # print(f"Session data removed for SID: {sid}")
+        """Removes the session data for the given session ID."""
+        async with self.pool.acquire() as conn:
+            async with conn.cursor() as cur:
+                await cur.execute("DELETE FROM session_data WHERE sid = %s", (sid,))
+                print(f"Session data removed for SID: {sid}")
 
-session_manager = SessionManager()
+
+
 
 
 
