@@ -41,8 +41,14 @@ load_dotenv()
 
 DSN = os.getenv('DATABASE_URL')
 
-async def main():
+session_manager = None  # Placeholder for the global variable
+
+async def create_app():
+    global session_manager
     session_manager = await SessionManager.create()
+    # Additional app setup goes here
+
+    return app
 
 class SessionManager:
     def __init__(self, pool):
