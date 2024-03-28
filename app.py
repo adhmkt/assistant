@@ -16,6 +16,7 @@ from urllib.parse import quote
 from dotenv import load_dotenv
 import aiopg
 import uuid
+import logging
 
 app = Quart(__name__)
 cors(app, allow_origin="*") 
@@ -58,7 +59,109 @@ async def create_app():
 
     return app
 
+
+
+
+
+
 class SessionManager:
+    def __init__(self, pool):
+        self.pool = pool
+
+    @classmethod
+    async def create(cls):
+        """Asynchronous factory method to create a SessionManager instance with an initialized connection pool."""
+        try:
+            pool = await aiopg.create_pool(DSN)
+            logging.info("SessionManager instance created with connection pool.")
+            return cls(pool)
+        except Exception as e:
+            logging.error(f"Failed to create a SessionManager instance: {e}")
+            raise
+
+    async def create_thread_for_sid(self, sid, db_session_id, assistant_id, user_id):
+        """Creates a thread for the given session ID, assistant ID, and user ID."""
+        try:
+            loop = asyncio.get_running_loop()
+            thread = await loop.run_in_executor(None, lambda: "thread-id-placeholder")  # Mock thread creation
+            thread_id = thread if thread else None
+
+            async with self.pool.acquire() as conn:
+                async with conn.cursor() as cur:
+                    await cur.execute("""
+                        INSERT INTO session_data (sid, user_thread_id, user_assistant_id, user_id, thread_to_sid) 
+                        VALUES (%s, %s, %s, %s, %s)
+                        ON CONFLICT (sid) DO UPDATE 
+                        SET user_thread_id = EXCLUDED.user_thread_id, user_assistant_id = EXCLUDED.user_assistant_id, 
+                            user_id = EXCLUDED.user_id, thread_to_sid = EXCLUDED.thread_to_sid, updated_at = NOW()""",
+                                      (db_session_id, thread_id, assistant_id, user_id, json.dumps({thread_id: db_session_id})))
+            logging.info(f"Thread created for new user: {thread_id} with SID: {db_session_id}")
+        except Exception as e:
+            logging.error(f"Error creating thread for SID {db_session_id}: {e}")
+
+    async def get_user_id(self, sid):
+        try:
+            session_info = await sio.get_session(sid)
+            if session_info is None:
+                logging.warning(f"No session info found for SID: {sid}")
+                return None
+            db_session_id = session_info.get('session_id')
+
+            async with self.pool.acquire() as conn:
+                async with conn.cursor() as cur:
+                    await cur.execute("SELECT user_id FROM session_data WHERE sid = %s", (db_session_id,))
+                    result = await cur.fetchone()
+                    return result[0] if result else None
+        except Exception as e:
+            logging.error(f"Error retrieving user ID for SID {sid}: {e}")
+
+    async def get_thread_id(self, sid):
+        try:
+            session_info = await sio.get_session(sid)
+            if session_info is None:
+                logging.warning(f"No session info found for SID: {sid}")
+                return None
+            db_session_id = session_info.get('session_id')
+
+            async with self.pool.acquire() as conn:
+                async with conn.cursor() as cur:
+                    await cur.execute("SELECT user_thread_id FROM session_data WHERE sid = %s", (db_session_id,))
+                    result = await cur.fetchone()
+                    return result[0] if result else None
+        except Exception as e:
+            logging.error(f"Error retrieving thread ID for SID {sid}: {e}")
+
+    async def get_assistant_id(self, sid):
+        try:
+            session_info = await sio.get_session(sid)
+            if session_info is None:
+                logging.warning(f"No session info found for SID: {sid}")
+                return None
+            db_session_id = session_info.get('session_id')
+
+            async with self.pool.acquire() as conn:
+                async with conn.cursor() as cur:
+                    await cur.execute("SELECT user_assistant_id FROM session_data WHERE sid = %s", (db_session_id,))
+                    result = await cur.fetchone()
+                    return result[0] if result else None
+        except Exception as e:
+            logging.error(f"Error retrieving assistant ID for SID {sid}: {e}")
+
+    async def remove_session(self, sid):
+        try:
+            session_info = await sio.get_session(sid)
+            if session_info is None:
+                logging.warning(f"Attempt to remove non-existent session for SID: {sid}")
+                return
+            db_session_id = session_info.get('session_id')
+
+            async with self.pool.acquire() as conn:
+                async with conn.cursor() as cur:
+                    await cur.execute("DELETE FROM session_data WHERE sid = %s", (db_session_id,))
+                    logging.info(f"Session data removed for SID: {db_session_id}")
+        except Exception as e:
+            logging.error(f"Error removing session for SID {sid}: {e}")
+
     def __init__(self, pool):
         self.pool = pool
 
