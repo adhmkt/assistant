@@ -93,11 +93,10 @@ class SessionManager:
             print(f"Error creating thread for SID {db_session_id}: {e}")
 
     async def get_user_id(self, sid):
-
         session_info = await sio.get_session(sid)
         if session_info is None:
             return None  # No session info found for the SID
-        db_session_id = await session_info.get('session_id')
+        db_session_id = session_info.get('session_id')  # Corrected: Removed await
 
         """Retrieves the user ID for the given session ID."""
         async with self.pool.acquire() as conn:
@@ -107,11 +106,10 @@ class SessionManager:
                 return result[0] if result else None
 
     async def get_thread_id(self, sid):
-
         session_info = await sio.get_session(sid)
         if session_info is None:
             return None  # No session info found for the SID
-        db_session_id = await session_info.get('session_id')
+        db_session_id = session_info.get('session_id')  # Corrected: Removed await
 
         """Retrieves the thread ID for the given session ID."""
         async with self.pool.acquire() as conn:
@@ -120,19 +118,12 @@ class SessionManager:
                 result = await cur.fetchone()
                 return result[0] if result else None
 
-    # async def get_sid_by_thread_id(self, thread_id):
-    #     """Retrieves the session ID for the given thread ID."""
-    #     async with self.pool.acquire() as conn:
-    #         async with conn.cursor() as cur:
-    #             await cur.execute("SELECT sid FROM session_data WHERE thread_to_sid ->> %s IS NOT NULL", (thread_id,))
-    #             result = await cur.fetchone()
-    #             return result[0] if result else None
-
     async def get_assistant_id(self, sid):
         session_info = await sio.get_session(sid)
         if session_info is None:
             return None  # No session info found for the SID
-        db_session_id = await session_info.get('session_id')
+        db_session_id = session_info.get('session_id')  # Corrected: Removed await
+
         """Retrieves the assistant ID for the given session ID."""
         async with self.pool.acquire() as conn:
             async with conn.cursor() as cur:
@@ -141,18 +132,16 @@ class SessionManager:
                 return result[0] if result else None
 
     async def remove_session(self, sid):
-
         session_info = await sio.get_session(sid)
         if session_info is None:
-            return None  # No session info found for the SID
-        db_session_id = await session_info.get('session_id')
+            return  # No session info found for the SID; consider if you should return None or handle differently
+        db_session_id = session_info.get('session_id')  # Corrected: Removed await
+
         """Removes the session data for the given session ID."""
         async with self.pool.acquire() as conn:
             async with conn.cursor() as cur:
                 await cur.execute("DELETE FROM session_data WHERE sid = %s", (db_session_id,))
                 print(f"Session data removed for SID: {db_session_id}")
-
-
 
 
 
