@@ -94,10 +94,10 @@ class SessionManager:
 
     async def get_user_id(self, sid):
 
-        session_info = sio.get_session(sid)
+        session_info = await sio.get_session(sid)
         if session_info is None:
             return None  # No session info found for the SID
-        db_session_id = session_info.get('session_id')
+        db_session_id = await session_info.get('session_id')
 
         """Retrieves the user ID for the given session ID."""
         async with self.pool.acquire() as conn:
@@ -108,10 +108,10 @@ class SessionManager:
 
     async def get_thread_id(self, sid):
 
-        session_info = sio.get_session(sid)
+        session_info = await sio.get_session(sid)
         if session_info is None:
             return None  # No session info found for the SID
-        db_session_id = session_info.get('session_id')
+        db_session_id = await session_info.get('session_id')
 
         """Retrieves the thread ID for the given session ID."""
         async with self.pool.acquire() as conn:
@@ -129,10 +129,10 @@ class SessionManager:
     #             return result[0] if result else None
 
     async def get_assistant_id(self, sid):
-        session_info = sio.get_session(sid)
+        session_info = await sio.get_session(sid)
         if session_info is None:
             return None  # No session info found for the SID
-        db_session_id = session_info.get('session_id')
+        db_session_id = await session_info.get('session_id')
         """Retrieves the assistant ID for the given session ID."""
         async with self.pool.acquire() as conn:
             async with conn.cursor() as cur:
@@ -142,10 +142,10 @@ class SessionManager:
 
     async def remove_session(self, sid):
 
-        session_info = sio.get_session(sid)
+        session_info = await sio.get_session(sid)
         if session_info is None:
             return None  # No session info found for the SID
-        db_session_id = session_info.get('session_id')
+        db_session_id = await session_info.get('session_id')
         """Removes the session data for the given session ID."""
         async with self.pool.acquire() as conn:
             async with conn.cursor() as cur:
