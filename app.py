@@ -13,71 +13,53 @@ from command.command_registry import CommandRegistry
 from supabase import create_client, Client
 from database_manager import DatabaseManager
 from urllib.parse import quote 
+from session_manager import SessionManager, SessionManagerDB
+from dotenv import load_dotenv
+import uuid
 
 app = Quart(__name__)
 # Allow CORS for all domains on all routes
 app = cors(app, allow_origin="*")
-
-
-# Assuming command_registry is a module you have for command execution
-
-
 
 # Load OpenAI API Key and setup the client
 my_api_key = os.getenv('OPENAI_API_KEY')
 my_supabase_key = os.getenv('SUPABASE_KEY')
 my_supabase_url = os.getenv('SUPABASE_URL')
 app.secret_key = os.getenv('MY_APP_SECRET_KEY')
-
-client = OpenAI(api_key=my_api_key)
-
+DSN = os.getenv('DATABASE_URL')
 
 sio = socketio.AsyncServer(async_mode='asgi')
 sio_app = socketio.ASGIApp(sio, app)
 
+client = OpenAI(api_key=my_api_key)
 
 
-class SessionManager:
-    def __init__(self):
-        self.user_threads = {}
-        self.user_assistant_ids = {}
-        self.thread_to_sid = {}
-        self.user_ids = {}
 
-    async def create_thread_for_sid(self, sid, assistant_id, user_id):
-        try:
-            loop = asyncio.get_running_loop()
-            # Assuming client.beta.threads.create returns a Thread-like object
-            thread = await loop.run_in_executor(None, client.beta.threads.create)
-            # Access the 'id' attribute of the thread object (adjust according to the actual attribute name)
-            self.user_threads[sid] = thread.id if hasattr(thread, 'id') else None
-            self.user_assistant_ids[sid] = assistant_id
-            self.user_ids[sid] = user_id 
-            self.thread_to_sid[thread.id if hasattr(thread, 'id') else None] = sid
-            print(f"Thread created for new user: {thread.id if hasattr(thread, 'id') else 'Unknown ID'} with SID: {sid}")
-        except Exception as e:
-            print(f"Error creating thread for SID {sid}: {e}")
+@app.before_serving
+async def before_serving():
+    global session_manager
+    # Assuming SessionManager.create() is an async factory method
+    session_manager = await SessionManagerDB.create(DSN)
+    # session_manager =  SessionManager(client)
 
-    def get_user_id(self, sid):
-         return self.user_ids.get(sid)
 
-    def get_thread_id(self, sid):
-        return self.user_threads.get(sid)
 
-    def get_sid_by_thread_id(self, thread_id):
-        return self.thread_to_sid.get(thread_id)
 
-    def get_assistant_id(self, sid):
-        return self.user_assistant_ids.get(sid)
+load_dotenv()
 
-    def remove_session(self, sid):
-        thread_id = self.user_threads.pop(sid, None)
-        self.user_assistant_ids.pop(sid, None)
-        if thread_id:
-            self.thread_to_sid.pop(thread_id, None)
-        # print(f"Session data removed for SID: {sid}")
+DSN = os.getenv('DATABASE_URL')
 
-session_manager = SessionManager()
+session_manager = None  # Placeholder for the global variable
+
+async def create_app():
+    global session_manager
+    session_manager = await SessionManagerDB.create()
+    # Additional app setup goes here
+
+    return app
+
+# session_manager = SessionManager(client)
+# session_manager = await SessionManager.create()
 
 
 
@@ -259,11 +241,14 @@ async def submit_form():
 async def connect(sid, environ):
     # print('Socket.IO connected')
     await sio.enter_room(sid, room=sid)
+    db_session_id = str(uuid.uuid4())  # Generate a UUID4 session ID
+    sio.save_session(sid, {'session_id': db_session_id})
     query_string = environ.get('QUERY_STRING', '')
     parsed_query = parse_qs(query_string)
     print(f'Query String = {query_string}')
     print(f'Parsed Query = {parsed_query}')
 
+   
     # print(f'Query String = {query_string}')
     
     # print(f'Parsed String = {parsed_query}')
@@ -273,7 +258,7 @@ async def connect(sid, environ):
     print(f"PARSED QUERY:  {parsed_query}")
     # print(f'assistant_id = {assistant_id}')
     # print('Tracing Line 118')
-    await session_manager.create_thread_for_sid(sid, assistant_id,user_id)
+    await session_manager.create_thread_for_sid(sid, db_session_id, assistant_id,user_id)
 
 @sio.event
 async def disconnect(sid):
