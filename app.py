@@ -336,7 +336,7 @@ async def connect(sid, environ):
     # print('Socket.IO connected')
     await sio.enter_room(sid, room=sid)
     db_session_id = str(uuid.uuid4())  # Generate a UUID4 session ID
-    sio.save_session(sid, {'session_id': db_session_id})
+    await sio.save_session(sid, {'session_id': db_session_id})
     query_string = environ.get('QUERY_STRING', '')
     parsed_query = parse_qs(query_string)
     print(f'Query String = {query_string}')
