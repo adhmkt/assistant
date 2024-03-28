@@ -15,6 +15,7 @@ from database_manager import DatabaseManager
 from urllib.parse import quote 
 from dotenv import load_dotenv
 import aiopg
+import uuid
 
 app = Quart(__name__)
 cors(app, allow_origin="*") 
@@ -68,7 +69,7 @@ class SessionManager:
         return cls(pool) 
     
 
-    async def create_thread_for_sid(self, sid, assistant_id, user_id):
+    async def create_thread_for_sid(self, sessionid, assistant_id, user_id):
         """Creates a thread for the given session ID, assistant ID, and user ID."""
         try:
             # Example logic to create a thread (replace with your actual thread creation logic)
@@ -85,10 +86,10 @@ class SessionManager:
                         ON CONFLICT (sid) DO UPDATE 
                         SET user_thread_id = EXCLUDED.user_thread_id, user_assistant_id = EXCLUDED.user_assistant_id, 
                             user_id = EXCLUDED.user_id, thread_to_sid = EXCLUDED.thread_to_sid, updated_at = NOW()""",
-                                      (sid, thread_id, assistant_id, user_id, json.dumps({thread_id: sid})))
+                                      (sessionid, thread_id, assistant_id, user_id, json.dumps({thread_id: sessionid})))
             print(f"Thread created for new user: {thread_id} with SID: {sid}")
         except Exception as e:
-            print(f"Error creating thread for SID {sid}: {e}")
+            print(f"Error creating thread for SID {sessionid}: {e}")
 
     async def get_user_id(self, sid):
         """Retrieves the user ID for the given session ID."""
@@ -310,23 +311,24 @@ async def submit_form():
 
 @sio.event
 async def connect(sid, environ):
-    # print('Socket.IO connected')
-    await sio.enter_room(sid, room=sid)
+    # Generate a unique session ID
+    # session_id = str(uuid.uuid4())  # Generate a UUID4 session ID
+    session_id = "mysessionid123456789"
+    # Extract assistant_id and user_id from the query parameters
     query_string = environ.get('QUERY_STRING', '')
     parsed_query = parse_qs(query_string)
-    print(f'Query String = {query_string}')
-    print(f'Parsed Query = {parsed_query}')
-
-    # print(f'Query String = {query_string}')
+    assistant_id = parsed_query.get('assistant_id', ['default_assistant_id'])[0]
+    user_id = parsed_query.get('user_id', ['default_user_id'])[0]
     
-    # print(f'Parsed String = {parsed_query}')
-    assistant_id = parsed_query.get('assistant_id', ['default_assistant_id'])[0]  # Example default ID
-    user_id = parsed_query.get('user_id', ['default_user_id'])[0] 
-    print(f"USER ID AT CONNECT:  {user_id}")
-    print(f"PARSED QUERY:  {parsed_query}")
-    # print(f'assistant_id = {assistant_id}')
-    # print('Tracing Line 118')
-    await session_manager.create_thread_for_sid(sid, assistant_id,user_id)
+    # Create a thread for the session using the generated session ID
+    await session_manager.create_thread_for_sid(session_id, assistant_id, user_id)
+    
+    # Enter the room using the generated session ID
+    await sio.enter_room(sid, room=session_id)
+    
+    # Print information for debugging
+    print(f"Session ID at CONNECT:  {session_id}")
+    print(f"Assistant ID: {assistant_id}, User ID: {user_id}")
 
 @sio.event
 async def disconnect(sid):
