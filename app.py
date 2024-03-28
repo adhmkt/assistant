@@ -17,6 +17,9 @@ from dotenv import load_dotenv
 import aiopg
 import uuid
 import logging
+import traceback
+
+logging.basicConfig(level=logging.INFO)
 
 app = Quart(__name__)
 cors(app, allow_origin="*") 
@@ -380,18 +383,41 @@ async def disconnect(sid):
     # print('Socket.IO disconnected')
     await session_manager.remove_session(sid)
 
+
+
 @sio.event
 async def message(sid, data):
-    # print('Received message:', data)
-    thread_id = await session_manager.get_thread_id(sid)
-    if thread_id:
-        assistant_id = await session_manager.get_assistant_id(sid)
+    try:
+        logging.info(f'Received message from SID {sid}: {data}')
+        session_info = await sio.get_session(sid)
         
-        await send_bot_response(thread_id, data, sid, assistant_id)
-    else:
-        await sio.emit('response', {'response': "No active thread found. Please reconnect."}, room=sid)
+        if not session_info:
+            logging.warning(f'No session info found for SID: {sid}')
+            await sio.emit('response', {'response': "Session information is missing. Please reconnect."}, room=sid)
+            return
 
-# handled_actions = {}
+        db_session_id = session_info.get('session_id')
+        if not db_session_id:
+            logging.warning(f'No db_session_id found for SID: {sid}')
+            await sio.emit('response', {'response': "Database session ID is missing. Please reconnect."}, room=sid)
+            return
+
+        thread_id = await session_manager.get_thread_id(db_session_id)
+        if thread_id:
+            assistant_id = await session_manager.get_assistant_id(db_session_id)
+            if assistant_id:
+                await send_bot_response(thread_id, data, sid, assistant_id, db_session_id)
+            else:
+                logging.warning(f'No assistant_id found for db_session_id: {db_session_id}')
+                await sio.emit('response', {'response': "Assistant ID is missing. Please reconnect."}, room=sid)
+        else:
+            logging.warning(f'No active thread found for db_session_id: {db_session_id}')
+            await sio.emit('response', {'response': "No active thread found. Please reconnect."}, room=sid)
+
+    except Exception as e:
+        logging.error(f'Error processing message from SID {sid}: {e}\n{traceback.format_exc()}')
+        await sio.emit('response', {'response': "An error occurred while processing your message. Please try again."}, room=sid)
+
 
 
 # Assuming there's a global dictionary to store prompts
