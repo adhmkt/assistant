@@ -1,6 +1,7 @@
 import asyncio
 import aiopg
 import json
+import sys
 
 class SessionManagerDB:
     def __init__(self, pool, client, DSN, sio):
@@ -8,6 +9,7 @@ class SessionManagerDB:
         self.client = client
         self.DSN = DSN
         self.sio = sio
+        print("YOU GOT HERE", file=sys.stdout)
 
     @classmethod
     async def create(cls,DSN):
