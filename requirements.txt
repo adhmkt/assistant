@@ -57,3 +57,4 @@ wsproto==1.2.0
 supabase
 pytz
 aiopg
+uuid

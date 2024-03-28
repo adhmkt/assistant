@@ -15,6 +15,7 @@ from database_manager import DatabaseManager
 from urllib.parse import quote 
 from dotenv import load_dotenv
 import aiopg
+import uuid
 
 app = Quart(__name__)
 cors(app, allow_origin="*") 
@@ -316,6 +317,8 @@ async def connect(sid, environ):
     parsed_query = parse_qs(query_string)
     print(f'Query String = {query_string}')
     print(f'Parsed Query = {parsed_query}')
+
+    db_session_id = str(uuid.uuid4())  # Generate a UUID4 session ID
 
     # print(f'Query String = {query_string}')
     
