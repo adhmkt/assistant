@@ -13,37 +13,37 @@ from command.command_registry import CommandRegistry
 from supabase import create_client, Client
 from database_manager import DatabaseManager
 from urllib.parse import quote 
-from session_manager import SessionManager, SessionManagerDB
 from dotenv import load_dotenv
+import aiopg
 import uuid
 
 app = Quart(__name__)
-# Allow CORS for all domains on all routes
-app = cors(app, allow_origin="*")
+cors(app, allow_origin="*") 
+
+@app.before_serving
+async def before_serving():
+    global session_manager
+    # Assuming SessionManager.create() is an async factory method
+    session_manager = await SessionManager.create()
+
+
+
+
+# Assuming command_registry is a module you have for command execution
+
+
 
 # Load OpenAI API Key and setup the client
 my_api_key = os.getenv('OPENAI_API_KEY')
 my_supabase_key = os.getenv('SUPABASE_KEY')
 my_supabase_url = os.getenv('SUPABASE_URL')
 app.secret_key = os.getenv('MY_APP_SECRET_KEY')
-DSN = os.getenv('DATABASE_URL')
-
-sio = socketio.AsyncServer(async_mode='asgi')
-sio_app = socketio.ASGIApp(sio, app)
 
 client = OpenAI(api_key=my_api_key)
 
 
-
-@app.before_serving
-async def before_serving():
-    global session_manager
-    # Assuming SessionManager.create() is an async factory method
-    session_manager = await SessionManagerDB.create(DSN)
-    # session_manager =  SessionManager(client)
-
-
-
+sio = socketio.AsyncServer(async_mode='asgi')
+sio_app = socketio.ASGIApp(sio, app)
 
 load_dotenv()
 
@@ -53,13 +53,107 @@ session_manager = None  # Placeholder for the global variable
 
 async def create_app():
     global session_manager
-    session_manager = await SessionManagerDB.create()
+    session_manager = await SessionManager.create()
     # Additional app setup goes here
 
     return app
 
-# session_manager = SessionManager(client)
-# session_manager = await SessionManager.create()
+class SessionManager:
+    def __init__(self, pool):
+        self.pool = pool
+
+    @classmethod
+    async def create(cls):
+        """Asynchronous factory method to create a SessionManager instance with an initialized connection pool."""
+        pool = await aiopg.create_pool(DSN)
+        return cls(pool) 
+    
+
+    async def create_thread_for_sid(self, sid, db_session_id, assistant_id, user_id):
+        """Creates a thread for the given session ID, assistant ID, and user ID."""
+        try:
+            # Example logic to create a thread (replace with your actual thread creation logic)
+            loop = asyncio.get_running_loop()
+            thread = await loop.run_in_executor(None, lambda: "thread-id-placeholder")  # Mock thread creation
+            thread_id = thread if thread else None
+
+            # Use the connection pool for database operations
+            async with self.pool.acquire() as conn:
+                async with conn.cursor() as cur:
+                    await cur.execute("""
+                        INSERT INTO session_data (sid, user_thread_id, user_assistant_id, user_id, thread_to_sid) 
+                        VALUES (%s, %s, %s, %s, %s)
+                        ON CONFLICT (sid) DO UPDATE 
+                        SET user_thread_id = EXCLUDED.user_thread_id, user_assistant_id = EXCLUDED.user_assistant_id, 
+                            user_id = EXCLUDED.user_id, thread_to_sid = EXCLUDED.thread_to_sid, updated_at = NOW()""",
+                                      (db_session_id, thread_id, assistant_id, user_id, json.dumps({thread_id: db_session_id})))
+            print(f"Thread created for new user: {thread_id} with SID: {db_session_id}")
+            print(f"The sid created by socket: {sid}")
+        except Exception as e:
+            print(f"Error creating thread for SID {db_session_id}: {e}")
+
+    async def get_user_id(self, sid):
+
+        session_info = sio.get_session(sid)
+        if session_info is None:
+            return None  # No session info found for the SID
+        db_session_id = session_info.get('session_id')
+
+        """Retrieves the user ID for the given session ID."""
+        async with self.pool.acquire() as conn:
+            async with conn.cursor() as cur:
+                await cur.execute("SELECT user_id FROM session_data WHERE sid = %s", (db_session_id,))
+                result = await cur.fetchone()
+                return result[0] if result else None
+
+    async def get_thread_id(self, sid):
+
+        session_info = sio.get_session(sid)
+        if session_info is None:
+            return None  # No session info found for the SID
+        db_session_id = session_info.get('session_id')
+
+        """Retrieves the thread ID for the given session ID."""
+        async with self.pool.acquire() as conn:
+            async with conn.cursor() as cur:
+                await cur.execute("SELECT user_thread_id FROM session_data WHERE sid = %s", (db_session_id,))
+                result = await cur.fetchone()
+                return result[0] if result else None
+
+    # async def get_sid_by_thread_id(self, thread_id):
+    #     """Retrieves the session ID for the given thread ID."""
+    #     async with self.pool.acquire() as conn:
+    #         async with conn.cursor() as cur:
+    #             await cur.execute("SELECT sid FROM session_data WHERE thread_to_sid ->> %s IS NOT NULL", (thread_id,))
+    #             result = await cur.fetchone()
+    #             return result[0] if result else None
+
+    async def get_assistant_id(self, sid):
+        session_info = sio.get_session(sid)
+        if session_info is None:
+            return None  # No session info found for the SID
+        db_session_id = session_info.get('session_id')
+        """Retrieves the assistant ID for the given session ID."""
+        async with self.pool.acquire() as conn:
+            async with conn.cursor() as cur:
+                await cur.execute("SELECT user_assistant_id FROM session_data WHERE sid = %s", (db_session_id,))
+                result = await cur.fetchone()
+                return result[0] if result else None
+
+    async def remove_session(self, sid):
+
+        session_info = sio.get_session(sid)
+        if session_info is None:
+            return None  # No session info found for the SID
+        db_session_id = session_info.get('session_id')
+        """Removes the session data for the given session ID."""
+        async with self.pool.acquire() as conn:
+            async with conn.cursor() as cur:
+                await cur.execute("DELETE FROM session_data WHERE sid = %s", (db_session_id,))
+                print(f"Session data removed for SID: {db_session_id}")
+
+
+
 
 
 
@@ -104,11 +198,11 @@ async def handle_function(run, thread_id, assistant_id, client, function_name, t
         )
 
         # Directly handle and send the response without using a queue
-        sid = session_manager.get_sid_by_thread_id(thread_id)
-        if sid:
+        # sid = await session_manager.get_sid_by_thread_id(thread_id)
+        # if sid:
            
-            #await sio.emit('response', {'response': result}, room=sid)
-            print("")
+        #     #await sio.emit('response', {'response': result}, room=sid)
+        #     print("")
     except Exception as e:
         print(f"An error occurred while executing {tool_name}: {e}")
 
@@ -263,14 +357,14 @@ async def connect(sid, environ):
 @sio.event
 async def disconnect(sid):
     # print('Socket.IO disconnected')
-    session_manager.remove_session(sid)
+    await session_manager.remove_session(sid)
 
 @sio.event
 async def message(sid, data):
     # print('Received message:', data)
-    thread_id = session_manager.get_thread_id(sid)
+    thread_id = await session_manager.get_thread_id(sid)
     if thread_id:
-        assistant_id = session_manager.get_assistant_id(sid)
+        assistant_id = await session_manager.get_assistant_id(sid)
         
         await send_bot_response(thread_id, data, sid, assistant_id)
     else:
@@ -393,8 +487,8 @@ async def get_bot_response(thread_id, user_id, message, assistant_id, client):
 
 async def send_bot_response(thread_id, message, sid , assistant_id):
    
-    assistant_id = session_manager.get_assistant_id(sid)  # Make sure to call the method with sid
-    user_id = session_manager.get_user_id(sid)
+    assistant_id = await session_manager.get_assistant_id(sid)  # Make sure to call the method with sid
+    user_id = await session_manager.get_user_id(sid)
     # print("FROM send_bot_response, line 229 , assistant_ID = ", assistant_id)
     
     if assistant_id:
@@ -412,6 +506,4 @@ async def send_bot_response(thread_id, message, sid , assistant_id):
 
 
 if __name__ == "__main__":
-     #uvicorn.run("app:sio_app", host="127.0.0.1", port=5000, reload=True)
-    pass
-
+     pass
