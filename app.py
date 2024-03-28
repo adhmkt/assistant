@@ -61,9 +61,6 @@ async def create_app():
 
 
 
-
-
-
 class SessionManager:
     def __init__(self, pool):
         self.pool = pool
@@ -79,27 +76,41 @@ class SessionManager:
             logging.error(f"Failed to create a SessionManager instance: {e}")
             raise
 
-    async def create_thread_for_sid(self, sid, db_session_id, assistant_id, user_id):
-        """Creates a thread for the given session ID, assistant ID, and user ID."""
+    async def create_thread_for_sid(self, sids, db_session_id, assistant_id, user_id):
         try:
             loop = asyncio.get_running_loop()
-            thread = await loop.run_in_executor(None, lambda: "thread-id-placeholder")  # Mock thread creation
-            thread_id = thread if thread else None
-
-            async with self.pool.acquire() as conn:
-                async with conn.cursor() as cur:
-                    await cur.execute("""
-                        INSERT INTO session_data (sid, user_thread_id, user_assistant_id, user_id, thread_to_sid) 
-                        VALUES (%s, %s, %s, %s, %s)
-                        ON CONFLICT (sid) DO UPDATE 
-                        SET user_thread_id = EXCLUDED.user_thread_id, user_assistant_id = EXCLUDED.user_assistant_id, 
-                            user_id = EXCLUDED.user_id, thread_to_sid = EXCLUDED.thread_to_sid, updated_at = NOW()""",
-                                      (db_session_id, thread_id, assistant_id, user_id, json.dumps({thread_id: db_session_id})))
-            logging.info(f"Thread created for new user: {thread_id} with SID: {db_session_id}")
+            # Assuming client.beta.threads.create returns a Thread-like object
+            thread = await loop.run_in_executor(None, client.beta.threads.create)
+            # Access the 'id' attribute of the thread object (adjust according to the actual attribute name)
+            self.user_threads[db_session_id] = thread.id if hasattr(thread, 'id') else None
+            self.user_assistant_ids[db_session_id] = assistant_id
+            self.user_ids[db_session_id] = user_id 
+            self.thread_to_sid[thread.id if hasattr(thread, 'id') else None] = db_session_id
+            print(f"Thread created for new user: {thread.id if hasattr(thread, 'id') else 'Unknown ID'} with SID: {db_session_id}")
         except Exception as e:
-            logging.error(f"Error creating thread for SID {db_session_id}: {e}")
+            print(f"Error creating thread for SID {db_session_id}: {e}")
+    
+    # async def create_thread_for_sid(self, sid, db_session_id, assistant_id, user_id):
+    #     """Creates a thread for the given session ID, assistant ID, and user ID."""
+    #     try:
+    #         loop = asyncio.get_running_loop()
+    #         thread = await loop.run_in_executor(None, lambda: "thread-id-placeholder")  # Mock thread creation
+    #         thread_id = thread if thread else None
 
-    async def get_user_id(self, sid):
+    #         async with self.pool.acquire() as conn:
+    #             async with conn.cursor() as cur:
+    #                 await cur.execute("""
+    #                     INSERT INTO session_data (sid, user_thread_id, user_assistant_id, user_id, thread_to_sid) 
+    #                     VALUES (%s, %s, %s, %s, %s)
+    #                     ON CONFLICT (sid) DO UPDATE 
+    #                     SET user_thread_id = EXCLUDED.user_thread_id, user_assistant_id = EXCLUDED.user_assistant_id, 
+    #                         user_id = EXCLUDED.user_id, thread_to_sid = EXCLUDED.thread_to_sid, updated_at = NOW()""",
+    #                                   (db_session_id, thread_id, assistant_id, user_id, json.dumps({thread_id: db_session_id})))
+    #         logging.info(f"Thread created for new user: {thread_id} with SID: {db_session_id}")
+    #     except Exception as e:
+    #         logging.error(f"Error creating thread for SID {db_session_id}: {e}")
+
+    async def get_user_id(self, sid ,db_session_id):
         try:
             session_info = await sio.get_session(sid)
             if session_info is None:
