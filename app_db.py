@@ -16,6 +16,10 @@ from urllib.parse import quote
 from dotenv import load_dotenv
 import aiopg
 import uuid
+import logging
+import traceback
+
+logging.basicConfig(level=logging.INFO)
 
 app = Quart(__name__)
 cors(app, allow_origin="*") 
@@ -58,26 +62,49 @@ async def create_app():
 
     return app
 
+
+
 class SessionManager:
     def __init__(self, pool):
         self.pool = pool
+        self.user_threads = {}  # Initializes the user_threads dictionary
+        self.user_assistant_ids = {}  # Initializes if you're using assistant IDs
+        self.user_ids = {}  # Initializes if you're tracking user IDs directly
+        self.thread_to_sid = {}  # Initializes the mapping of thread IDs to session IDs
+
 
     @classmethod
     async def create(cls):
         """Asynchronous factory method to create a SessionManager instance with an initialized connection pool."""
-        pool = await aiopg.create_pool(DSN)
-        return cls(pool) 
-    
+        try:
+            pool = await aiopg.create_pool(DSN)
+            logging.info("SessionManager instance created with connection pool.")
+            return cls(pool)
+        except Exception as e:
+            logging.error(f"Failed to create a SessionManager instance: {e}")
+            raise
 
+    # async def create_thread_for_sid(self, sids, db_session_id, assistant_id, user_id):
+    #     try:
+    #         loop = asyncio.get_running_loop()
+    #         # Assuming client.beta.threads.create returns a Thread-like object
+    #         thread = await loop.run_in_executor(None, client.beta.threads.create)
+    #          #Access the 'id' attribute of the thread object (adjust according to the actual attribute name)
+    #         self.user_threads[db_session_id] = thread.id if hasattr(thread, 'id') else None
+    #         self.user_assistant_ids[db_session_id] = assistant_id
+    #         self.user_ids[db_session_id] = user_id 
+    #         self.thread_to_sid[thread.id if hasattr(thread, 'id') else None] = db_session_id
+    #         print(f"Thread created for new user: {thread.id if hasattr(thread, 'id') else 'Unknown ID'} with SID: {db_session_id}")
+    #     except Exception as e:
+    #         print(f"Error creating thread for SID {db_session_id}: {e}")
+    
     async def create_thread_for_sid(self, sid, db_session_id, assistant_id, user_id):
         """Creates a thread for the given session ID, assistant ID, and user ID."""
         try:
-            # Example logic to create a thread (replace with your actual thread creation logic)
             loop = asyncio.get_running_loop()
             thread = await loop.run_in_executor(None, lambda: "thread-id-placeholder")  # Mock thread creation
             thread_id = thread if thread else None
 
-            # Use the connection pool for database operations
             async with self.pool.acquire() as conn:
                 async with conn.cursor() as cur:
                     await cur.execute("""
@@ -87,73 +114,83 @@ class SessionManager:
                         SET user_thread_id = EXCLUDED.user_thread_id, user_assistant_id = EXCLUDED.user_assistant_id, 
                             user_id = EXCLUDED.user_id, thread_to_sid = EXCLUDED.thread_to_sid, updated_at = NOW()""",
                                       (db_session_id, thread_id, assistant_id, user_id, json.dumps({thread_id: db_session_id})))
-            print(f"Thread created for new user: {thread_id} with SID: {db_session_id}")
-            print(f"The sid created by socket: {sid}")
+            logging.info(f"Thread created for new user: {thread_id} with SID: {db_session_id}")
         except Exception as e:
-            print(f"Error creating thread for SID {db_session_id}: {e}")
+            logging.error(f"Error creating thread for SID {db_session_id}: {e}")
 
-    async def get_user_id(self, sid):
+    async def get_user_id(self, sid ,db_session_id):
+        try:
+            session_info = await sio.get_session(sid)
+            if session_info is None:
+                logging.warning(f"No session info found for SID: {sid}")
+                return None
+            db_session_id = session_info.get('session_id')
 
-        session_info = sio.get_session(sid)
-        if session_info is None:
-            return None  # No session info found for the SID
-        db_session_id = session_info.get('session_id')
-
-        """Retrieves the user ID for the given session ID."""
-        async with self.pool.acquire() as conn:
-            async with conn.cursor() as cur:
-                await cur.execute("SELECT user_id FROM session_data WHERE sid = %s", (db_session_id,))
-                result = await cur.fetchone()
-                return result[0] if result else None
+            async with self.pool.acquire() as conn:
+                async with conn.cursor() as cur:
+                    await cur.execute("SELECT user_id FROM session_data WHERE sid = %s", (db_session_id,))
+                    result = await cur.fetchone()
+                    return result[0] if result else None
+        except Exception as e:
+            logging.error(f"Error retrieving user ID for SID {sid}: {e}")
 
     async def get_thread_id(self, sid):
 
-        session_info = sio.get_session(sid)
-        if session_info is None:
-            return None  # No session info found for the SID
-        db_session_id = session_info.get('session_id')
+        thread_id = "myhardcodedthreadid1234567"
 
-        """Retrieves the thread ID for the given session ID."""
-        async with self.pool.acquire() as conn:
-            async with conn.cursor() as cur:
-                await cur.execute("SELECT user_thread_id FROM session_data WHERE sid = %s", (db_session_id,))
-                result = await cur.fetchone()
-                return result[0] if result else None
+        return thread_id
+        # try:
+        #     session_info = await sio.get_session(sid)
+        #     if session_info is None:
+        #         logging.warning(f"No session info found for SID: {sid}")
+        #         return None
+        #     db_session_id = session_info.get('session_id')
 
-    # async def get_sid_by_thread_id(self, thread_id):
-    #     """Retrieves the session ID for the given thread ID."""
-    #     async with self.pool.acquire() as conn:
-    #         async with conn.cursor() as cur:
-    #             await cur.execute("SELECT sid FROM session_data WHERE thread_to_sid ->> %s IS NOT NULL", (thread_id,))
-    #             result = await cur.fetchone()
-    #             return result[0] if result else None
+        #     async with self.pool.acquire() as conn:
+        #         async with conn.cursor() as cur:
+        #             await cur.execute("SELECT user_thread_id FROM session_data WHERE sid = %s", (db_session_id,))
+        #             result = await cur.fetchone()
+        #             return result[0] if result else None
+        # except Exception as e:
+        #     logging.error(f"Error retrieving thread ID for SID {sid}: {e}")
 
     async def get_assistant_id(self, sid):
-        session_info = sio.get_session(sid)
-        if session_info is None:
-            return None  # No session info found for the SID
-        db_session_id = session_info.get('session_id')
-        """Retrieves the assistant ID for the given session ID."""
-        async with self.pool.acquire() as conn:
-            async with conn.cursor() as cur:
-                await cur.execute("SELECT user_assistant_id FROM session_data WHERE sid = %s", (db_session_id,))
-                result = await cur.fetchone()
-                return result[0] if result else None
+
+        assistant_id = "asst_mR8mXP8ARHS93vEsZrWx6Wp9"
+
+        return assistant_id
+        # try:
+        #     session_info = await sio.get_session(sid)
+        #     if session_info is None:
+        #         logging.warning(f"No session info found for SID: {sid}")
+        #         return None
+        #     db_session_id = session_info.get('session_id')
+
+        #     async with self.pool.acquire() as conn:
+        #         async with conn.cursor() as cur:
+        #             await cur.execute("SELECT user_assistant_id FROM session_data WHERE sid = %s", (db_session_id,))
+        #             result = await cur.fetchone()
+        #             return result[0] if result else None
+        # except Exception as e:
+        #     logging.error(f"Error retrieving assistant ID for SID {sid}: {e}")
 
     async def remove_session(self, sid):
+        try:
+            session_info = await sio.get_session(sid)
+            if session_info is None:
+                logging.warning(f"Attempt to remove non-existent session for SID: {sid}")
+                return
+            db_session_id = session_info.get('session_id')
 
-        session_info = sio.get_session(sid)
-        if session_info is None:
-            return None  # No session info found for the SID
-        db_session_id = session_info.get('session_id')
-        """Removes the session data for the given session ID."""
-        async with self.pool.acquire() as conn:
-            async with conn.cursor() as cur:
-                await cur.execute("DELETE FROM session_data WHERE sid = %s", (db_session_id,))
-                print(f"Session data removed for SID: {db_session_id}")
+            async with self.pool.acquire() as conn:
+                async with conn.cursor() as cur:
+                    await cur.execute("DELETE FROM session_data WHERE sid = %s", (db_session_id,))
+                    logging.info(f"Session data removed for SID: {db_session_id}")
+        except Exception as e:
+            logging.error(f"Error removing session for SID {sid}: {e}")
 
-
-
+    def __init__(self, pool):
+        self.pool = pool
 
 
 
@@ -336,7 +373,7 @@ async def connect(sid, environ):
     # print('Socket.IO connected')
     await sio.enter_room(sid, room=sid)
     db_session_id = str(uuid.uuid4())  # Generate a UUID4 session ID
-    sio.save_session(sid, {'session_id': db_session_id})
+    await sio.save_session(sid, {'session_id': db_session_id})
     query_string = environ.get('QUERY_STRING', '')
     parsed_query = parse_qs(query_string)
     print(f'Query String = {query_string}')
@@ -359,18 +396,42 @@ async def disconnect(sid):
     # print('Socket.IO disconnected')
     await session_manager.remove_session(sid)
 
+
+
 @sio.event
 async def message(sid, data):
-    # print('Received message:', data)
-    thread_id = await session_manager.get_thread_id(sid)
-    if thread_id:
-        assistant_id = await session_manager.get_assistant_id(sid)
+    try:
+        logging.info(f'Received message from SID {sid}: {data}')
+        session_info = await sio.get_session(sid)
         
-        await send_bot_response(thread_id, data, sid, assistant_id)
-    else:
-        await sio.emit('response', {'response': "No active thread found. Please reconnect."}, room=sid)
+        if not session_info:
+            logging.warning(f'No session info found for SID: {sid}')
+            await sio.emit('response', {'response': "Session information is missing. Please reconnect."}, room=sid)
+            return
 
-# handled_actions = {}
+        db_session_id = session_info.get('session_id')
+        if not db_session_id:
+            logging.warning(f'No db_session_id found for SID: {sid}')
+            await sio.emit('response', {'response': "Database session ID is missing. Please reconnect."}, room=sid)
+            return
+
+        thread_id = await session_manager.get_thread_id(db_session_id)
+        
+        if thread_id:
+            assistant_id = await session_manager.get_assistant_id(db_session_id)
+            if assistant_id:
+                await send_bot_response(thread_id, data, sid, assistant_id, db_session_id)
+            else:
+                logging.warning(f'No assistant_id found for db_session_id: {db_session_id}')
+                await sio.emit('response', {'response': "Assistant ID is missing. Please reconnect."}, room=sid)
+        else:
+            logging.warning(f'No active thread found for db_session_id: {db_session_id}')
+            await sio.emit('response', {'response': "No active thread found. Please reconnect."}, room=sid)
+
+    except Exception as e:
+        logging.error(f'Error processing message from SID {sid}: {e}\n{traceback.format_exc()}')
+        await sio.emit('response', {'response': "An error occurred while processing your message. Please try again."}, room=sid)
+
 
 
 # Assuming there's a global dictionary to store prompts
@@ -397,12 +458,12 @@ def clean_prompt(response_text):
         # Return an empty string or error message if the markers are not found
         return "Prompt could not be extracted."
 
-async def get_bot_response(thread_id, user_id, message, assistant_id, client):
+async def get_bot_response(thread_id, user_id, message, assistant_id, client, db_session_id):
     # print(f'Message is : {message}')
     try:
         
         # user_id = 'gfergergeeerge'
-        session_id =1
+        session_id =db_session_id
         data_manager = DatabaseManager()
         speaker = "user"
         print(f"MY USER ID:  {user_id}")
@@ -485,17 +546,17 @@ async def get_bot_response(thread_id, user_id, message, assistant_id, client):
         return "Sorry, an error occurred. Please try again later."
 
 
-async def send_bot_response(thread_id, message, sid , assistant_id):
+async def send_bot_response(thread_id, message, sid , assistant_id, db_session_id):
    
     assistant_id = await session_manager.get_assistant_id(sid)  # Make sure to call the method with sid
-    user_id = await session_manager.get_user_id(sid)
+    user_id = await session_manager.get_user_id(sid, db_session_id)
     # print("FROM send_bot_response, line 229 , assistant_ID = ", assistant_id)
     
     if assistant_id:
 
         
         
-        response = await get_bot_response(thread_id, user_id, message, assistant_id, client)
+        response = await get_bot_response(thread_id, user_id, message, assistant_id, client, db_session_id)
         await sio.emit('response', {'response': response}, room=sid)
     else:
         
