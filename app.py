@@ -458,12 +458,12 @@ def clean_prompt(response_text):
         # Return an empty string or error message if the markers are not found
         return "Prompt could not be extracted."
 
-async def get_bot_response(thread_id, user_id, message, assistant_id, client):
+async def get_bot_response(thread_id, user_id, message, assistant_id, client, db_session_id):
     # print(f'Message is : {message}')
     try:
         
         # user_id = 'gfergergeeerge'
-        session_id =1
+        session_id =db_session_id
         data_manager = DatabaseManager()
         speaker = "user"
         print(f"MY USER ID:  {user_id}")
@@ -549,14 +549,14 @@ async def get_bot_response(thread_id, user_id, message, assistant_id, client):
 async def send_bot_response(thread_id, message, sid , assistant_id, db_session_id):
    
     assistant_id = await session_manager.get_assistant_id(sid)  # Make sure to call the method with sid
-    user_id = await session_manager.get_user_id(sid)
+    user_id = await session_manager.get_user_id(sid, db_session_id)
     # print("FROM send_bot_response, line 229 , assistant_ID = ", assistant_id)
     
     if assistant_id:
 
         
         
-        response = await get_bot_response(thread_id, user_id, message, assistant_id, client)
+        response = await get_bot_response(thread_id, user_id, message, assistant_id, client, db_session_id)
         await sio.emit('response', {'response': response}, room=sid)
     else:
         
