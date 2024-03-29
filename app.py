@@ -407,7 +407,8 @@ async def message(sid, data):
             await sio.emit('response', {'response': "Database session ID is missing. Please reconnect."}, room=sid)
             return
 
-        thread_id = await session_manager.get_thread_id(db_session_id)
+        # thread_id = await session_manager.get_thread_id(db_session_id)
+        thread_id = "sdfsdfsdfsdfsdfsdfsdfsdfsdfsdfsdf"
         if thread_id:
             assistant_id = await session_manager.get_assistant_id(db_session_id)
             if assistant_id:
