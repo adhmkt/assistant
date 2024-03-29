@@ -546,7 +546,7 @@ async def get_bot_response(thread_id, user_id, message, assistant_id, client):
         return "Sorry, an error occurred. Please try again later."
 
 
-async def send_bot_response(thread_id, message, sid , assistant_id):
+async def send_bot_response(thread_id, message, sid , assistant_id, db_session_id):
    
     assistant_id = await session_manager.get_assistant_id(sid)  # Make sure to call the method with sid
     user_id = await session_manager.get_user_id(sid)
