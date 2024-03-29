@@ -67,6 +67,10 @@ async def create_app():
 class SessionManager:
     def __init__(self, pool):
         self.pool = pool
+        self.user_threads = {}
+        self.user_assistant_ids = {}
+        self.thread_to_sid = {}
+        self.user_ids = {}
 
     @classmethod
     async def create(cls):
@@ -84,7 +88,7 @@ class SessionManager:
             loop = asyncio.get_running_loop()
             # Assuming client.beta.threads.create returns a Thread-like object
             thread = await loop.run_in_executor(None, client.beta.threads.create)
-            # Access the 'id' attribute of the thread object (adjust according to the actual attribute name)
+             #Access the 'id' attribute of the thread object (adjust according to the actual attribute name)
             self.user_threads[db_session_id] = thread.id if hasattr(thread, 'id') else None
             self.user_assistant_ids[db_session_id] = assistant_id
             self.user_ids[db_session_id] = user_id 
