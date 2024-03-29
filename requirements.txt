@@ -8,3 +8,4 @@ python-dotenv
 aiopg
 supabase
 uuid
+pytz
