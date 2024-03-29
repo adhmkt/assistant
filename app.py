@@ -135,20 +135,24 @@ class SessionManager:
             logging.error(f"Error retrieving user ID for SID {sid}: {e}")
 
     async def get_thread_id(self, sid):
-        try:
-            session_info = await sio.get_session(sid)
-            if session_info is None:
-                logging.warning(f"No session info found for SID: {sid}")
-                return None
-            db_session_id = session_info.get('session_id')
 
-            async with self.pool.acquire() as conn:
-                async with conn.cursor() as cur:
-                    await cur.execute("SELECT user_thread_id FROM session_data WHERE sid = %s", (db_session_id,))
-                    result = await cur.fetchone()
-                    return result[0] if result else None
-        except Exception as e:
-            logging.error(f"Error retrieving thread ID for SID {sid}: {e}")
+        thread_id = "myhardcodedthreadid1234567"
+
+        return thread_id
+        # try:
+        #     session_info = await sio.get_session(sid)
+        #     if session_info is None:
+        #         logging.warning(f"No session info found for SID: {sid}")
+        #         return None
+        #     db_session_id = session_info.get('session_id')
+
+        #     async with self.pool.acquire() as conn:
+        #         async with conn.cursor() as cur:
+        #             await cur.execute("SELECT user_thread_id FROM session_data WHERE sid = %s", (db_session_id,))
+        #             result = await cur.fetchone()
+        #             return result[0] if result else None
+        # except Exception as e:
+        #     logging.error(f"Error retrieving thread ID for SID {sid}: {e}")
 
     async def get_assistant_id(self, sid):
         try:
@@ -407,8 +411,8 @@ async def message(sid, data):
             await sio.emit('response', {'response': "Database session ID is missing. Please reconnect."}, room=sid)
             return
 
-        # thread_id = await session_manager.get_thread_id(db_session_id)
-        thread_id = "sdfsdfsdfsdfsdfsdfsdfsdfsdfsdfsdf"
+        thread_id = await session_manager.get_thread_id(db_session_id)
+        
         if thread_id:
             assistant_id = await session_manager.get_assistant_id(db_session_id)
             if assistant_id:
