@@ -13,6 +13,7 @@ from command.command_registry import CommandRegistry
 from supabase import create_client, Client
 from database_manager import DatabaseManager
 from urllib.parse import quote 
+import uuid
 
 app = Quart(__name__)
 # Allow CORS for all domains on all routes
@@ -59,6 +60,7 @@ class SessionManager:
             print(f"Error creating thread for SID {sid}: {e}")
 
     def get_user_id(self, sid):
+         
          return self.user_ids.get(sid)
 
     def get_thread_id(self, sid):
@@ -147,24 +149,26 @@ async def login():
     # Capture assistant_id and assistant_name from the URL query parameters, with defaults if not provided
     assistant_id = request.args.get('assistant_id')
     assistant_name = request.args.get('assistant_name')
-    print(f"Captured on login: assistant_id={assistant_id}, assistant_name={assistant_name}")  # Debug print
+    session_id = request.args.get('session_id')
+
+    print(f"Captured on login: assistant_id={assistant_id}, assistant_name={assistant_name}, session_id={session_id}")  # Debug print
 
     if request.method == 'POST':
         assistant_id = (await request.form)['assistant_id']
         assistant_name = (await request.form)['assistant_name']
         print(f"Captured on login POST: assistant_id={assistant_id}, assistant_name={assistant_name}")  # Debug print
-
+        
         email = (await request.form)['email']
         password = (await request.form)['password']
         database_manager = DatabaseManager()
-        user_id = await database_manager.do_login(email, password)
+        user_id = await database_manager.do_login(email, password, assistant_id,session_id)
 
         if user_id:
             session['user_id'] = user_id  # Store user_id in session to indicate authentication
 
             # Construct redirect URL using the actual assistant_id and assistant_name captured from the request
             redirect_url = url_for('index', assistant_id=assistant_id) + \
-                f"?assistant_name={assistant_name}&user_id={user_id}"
+                f"?assistant_name={assistant_name}&user_id={user_id}&session_id={session_id}"
 
             return redirect(redirect_url)
         else:
@@ -198,6 +202,9 @@ async def assistant_links():
 async def index(assistant_id=None):
 
     user_id = request.args.get('user_id')
+    session_id = request.args.get('session_id')
+    
+    
 
     if user_id is None:
         assistant_name = request.args.get('name', '')  # Provide a default value if 'name' is not found
@@ -205,10 +212,26 @@ async def index(assistant_id=None):
         # Encode the assistant_id and assistant_name to ensure the URL is valid
         encoded_assistant_id = quote(assistant_id)
         encoded_assistant_name = quote(assistant_name)
+        
+
+        # Assuming session_id might not be a string or could be None
+        if isinstance(session_id, bytes):
+            # If session_id is bytes, decode to string before quoting
+            encoded_session_id = quote(session_id.decode('utf-8'))
+        elif isinstance(session_id, str):
+            # If session_id is already a string, directly quote it
+            encoded_session_id = quote(session_id)
+        else:
+            # Handle the case where session_id is None or another unexpected type
+            _session_id = str(uuid.uuid4())
+            encoded_session_id = quote(_session_id)
+            
+            print(f"Encoded session_id: {encoded_session_id}")
+            
 
         # Construct the URL with Quart's url_for
         # Note: Quart's url_for is an async function, so you need to await it
-        redirect_url = url_for('login', assistant_id=encoded_assistant_id, assistant_name=encoded_assistant_name)
+        redirect_url = url_for('login', assistant_id=encoded_assistant_id, assistant_name=encoded_assistant_name, session_id=encoded_session_id)
         
     
         return redirect(redirect_url)
@@ -220,8 +243,9 @@ async def index(assistant_id=None):
     # Assuming you have a function to fetch the assistant name by ID
      assistant_name = "Assistant Name Error"
     
-   
-    return await render_template('chat.html', data={}, selected_assistant_id=assistant_id, assistant_name=assistant_name, user_id=user_id)
+    session_id = request.args.get('session_id')
+
+    return await render_template('chat.html', data={}, selected_assistant_id=assistant_id, assistant_name=assistant_name, user_id=user_id,session_id=session_id)
 
 @app.route('/forms', methods=['GET', 'POST'])
 async def submit_form():
@@ -269,8 +293,10 @@ async def connect(sid, environ):
     # print(f'Parsed String = {parsed_query}')
     assistant_id = parsed_query.get('assistant_id', ['default_assistant_id'])[0]  # Example default ID
     user_id = parsed_query.get('user_id', ['default_user_id'])[0] 
+    session_id = parsed_query.get('session_id', ['default_user_id'])[0] 
     print(f"USER ID AT CONNECT:  {user_id}")
     print(f"PARSED QUERY:  {parsed_query}")
+    print(f"session_id at connect:  {session_id}")
     # print(f'assistant_id = {assistant_id}')
     # print('Tracing Line 118')
     await session_manager.create_thread_for_sid(sid, assistant_id,user_id)
