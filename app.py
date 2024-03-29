@@ -67,10 +67,11 @@ async def create_app():
 class SessionManager:
     def __init__(self, pool):
         self.pool = pool
-        self.user_threads = {}
-        self.user_assistant_ids = {}
-        self.thread_to_sid = {}
-        self.user_ids = {}
+        self.user_threads = {}  # Initializes the user_threads dictionary
+        self.user_assistant_ids = {}  # Initializes if you're using assistant IDs
+        self.user_ids = {}  # Initializes if you're tracking user IDs directly
+        self.thread_to_sid = {}  # Initializes the mapping of thread IDs to session IDs
+
 
     @classmethod
     async def create(cls):
@@ -380,7 +381,7 @@ async def connect(sid, environ):
     print(f"PARSED QUERY:  {parsed_query}")
     # print(f'assistant_id = {assistant_id}')
     # print('Tracing Line 118')
-    await session_manager.create_thread_for_sid(sid, db_session_id, assistant_id,user_id)
+    # await session_manager.create_thread_for_sid(sid, db_session_id, assistant_id,user_id)
 
 @sio.event
 async def disconnect(sid):
