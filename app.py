@@ -155,20 +155,24 @@ class SessionManager:
         #     logging.error(f"Error retrieving thread ID for SID {sid}: {e}")
 
     async def get_assistant_id(self, sid):
-        try:
-            session_info = await sio.get_session(sid)
-            if session_info is None:
-                logging.warning(f"No session info found for SID: {sid}")
-                return None
-            db_session_id = session_info.get('session_id')
 
-            async with self.pool.acquire() as conn:
-                async with conn.cursor() as cur:
-                    await cur.execute("SELECT user_assistant_id FROM session_data WHERE sid = %s", (db_session_id,))
-                    result = await cur.fetchone()
-                    return result[0] if result else None
-        except Exception as e:
-            logging.error(f"Error retrieving assistant ID for SID {sid}: {e}")
+        assistant_id = "asst_mR8mXP8ARHS93vEsZrWx6Wp9"
+
+        return assistant_id
+        # try:
+        #     session_info = await sio.get_session(sid)
+        #     if session_info is None:
+        #         logging.warning(f"No session info found for SID: {sid}")
+        #         return None
+        #     db_session_id = session_info.get('session_id')
+
+        #     async with self.pool.acquire() as conn:
+        #         async with conn.cursor() as cur:
+        #             await cur.execute("SELECT user_assistant_id FROM session_data WHERE sid = %s", (db_session_id,))
+        #             result = await cur.fetchone()
+        #             return result[0] if result else None
+        # except Exception as e:
+        #     logging.error(f"Error retrieving assistant ID for SID {sid}: {e}")
 
     async def remove_session(self, sid):
         try:
