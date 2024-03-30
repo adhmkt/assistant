@@ -372,16 +372,18 @@ async def submit_form():
 async def connect(sid, environ):
     # print('Socket.IO connected')
     await sio.enter_room(sid, room=sid)
-    db_session_id = str(uuid.uuid4())  # Generate a UUID4 session ID
-    await sio.save_session(sid, {'session_id': db_session_id})
+    # db_session_id = str(uuid.uuid4())  # Generate a UUID4 session ID
+    # await sio.save_session(sid, {'session_id': db_session_id})
     query_string = environ.get('QUERY_STRING', '')
     parsed_query = parse_qs(query_string)
     print(f'Query String = {query_string}')
     print(f'Parsed Query = {parsed_query}')
-
-   
+    # print(f"Received message from {data.get('user_id')} in session {data.get('session_id')}")
+    user_id = parsed_query.get('user_id', [None])[0]
+    session_id = parsed_query.get('session_id', [None])[0]  # This could be the newly generated one or from the client
+    print(f"User ID from query: {user_id}, Session ID from query or generated: {session_id}")
     # print(f'Query String = {query_string}')
-    
+    await sio.save_session(sid, {'session_id': session_id})
     # print(f'Parsed String = {parsed_query}')
     assistant_id = parsed_query.get('assistant_id', ['default_assistant_id'])[0]  # Example default ID
     user_id = parsed_query.get('user_id', ['default_user_id'])[0] 
@@ -389,7 +391,7 @@ async def connect(sid, environ):
     print(f"PARSED QUERY:  {parsed_query}")
     # print(f'assistant_id = {assistant_id}')
     # print('Tracing Line 118')
-    await session_manager.create_thread_for_sid(sid, db_session_id, assistant_id,user_id)
+    await session_manager.create_thread_for_sid(sid, session_id, assistant_id,user_id)
 
 @sio.event
 async def disconnect(sid):

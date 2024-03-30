@@ -46,8 +46,12 @@ document.addEventListener('DOMContentLoaded', () => {
     const params = new URLSearchParams(window.location.search);
     console.log('URL search parameters:', params.toString());
     const userIdFromUrl = params.get('user_id');
-    const nameFromUrl = params.get('name');
+    const nameFromUrl = params.get('assistant_name');
+    const seesionFromUrl = params.get('session_id');
     
+    console.log('Extracted user_ID from URL:', userIdFromUrl);
+    console.log('Extracted sesssion_ID from URL:', seesionFromUrl);
+    console.log('Extracted assistant name from URL:', nameFromUrl);
  
      // Define your elements first
      const infoPanel = document.getElementById('info-panel');
@@ -85,8 +89,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
 
     // Ensure assistantIdFromUrl is not null or undefined before connecting
-    const queryString = assistantIdFromUrl ? `?assistant_id=${encodeURIComponent(assistantIdFromUrl)}&user_id=${encodeURIComponent(userIdFromUrl)}` : '';
-    console.log('Query string for socket connection:', queryString);
+    const queryString = assistantIdFromUrl ? `?assistant_id=${encodeURIComponent(assistantIdFromUrl)}&user_id=${encodeURIComponent(userIdFromUrl)}&session_id=${encodeURIComponent(seesionFromUrl)}` : '';
+    console.log('Query string for socket connection NEW VERSION:', queryString);
 
     let socketUrl;
     if (location.port) {

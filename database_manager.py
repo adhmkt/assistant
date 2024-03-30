@@ -44,27 +44,17 @@ class DatabaseManager:
         
     
 
-    async def do_login(self, email, password, assistant_id, session_id):
+    async def do_login(self, email, password):
         try:
             loop = asyncio.get_event_loop()
             response = await loop.run_in_executor(None, self._sync_sign_in_with_password, email, password)
             user_details = response.user 
             user_id = getattr(user_details, "id", None)
-            print(f"User ID: {user_id}, redirecting...")
+            print(f"User ID AFTER LOGIN: {user_id}, redirecting...")
+            
 
             if user_id:
-                # Generate a unique session_id
                 
-                
-                # Save initial session data (without thread_id at this point)
-                await self.save_session_data(
-                    session_id=session_id,
-                    user_id=user_id,
-                    assistant_id=assistant_id,
-                    thread_id=None  # No thread_id yet
-                )
-
-                # Return or redirect with the session_id, user_id, and other needed info
                 return user_id
         except Exception as e:
             print(f"An error occurred during login: {e}")
