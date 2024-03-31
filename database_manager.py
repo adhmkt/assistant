@@ -24,6 +24,14 @@ class DatabaseManager:
     async def save_chat_conversation(self, user_id: str,thread_id: str, session_id: str, message: str, speaker: str, assistant_id: str):
         
         try:
+
+            print(f"Debugging Values AFTER LOGIN:")
+            print(f"app_user: {user_id}")  # Use the actual user_id from your users table or authentication response
+            print(f"message: {message}")
+            print(f"thread_id: {thread_id}")
+            print(f"session_id: {session_id}")
+            print(f"speaker: {speaker}")
+
             conversation = {
                 "app_user": user_id,  # Use the actual user_id from your users table or authentication response
                 "message": message,
@@ -32,7 +40,7 @@ class DatabaseManager:
                 "speaker": speaker
             }
 
-            print("Attempting to insert conversation:", conversation)
+        
 
             self.supabase.table("conversations").insert(conversation).execute()
 
@@ -44,18 +52,19 @@ class DatabaseManager:
         
     
 
-    async def do_login(self, email, password):
+    async def do_login(self, email, password, session_id, assistant_id):
         try:
             loop = asyncio.get_event_loop()
             response = await loop.run_in_executor(None, self._sync_sign_in_with_password, email, password)
             user_details = response.user 
-            user_id = getattr(user_details, "id", None)
-            print(f"User ID AFTER LOGIN: {user_id}, redirecting...")
+            new_user_id = getattr(user_details, "id", None)
+            print(f"User ID AFTER LOGIN: {new_user_id}, redirecting...")
             
 
-            if user_id:
+            if new_user_id:
                 
-                return user_id
+             return new_user_id
+        
         except Exception as e:
             print(f"An error occurred during login: {e}")
         return None, None
@@ -192,32 +201,71 @@ class DatabaseManager:
             print(f"An error occurred while deleting session data: {e}")
 
     async def fetch_session_data(self, session_id):
-        """Fetch session data from the database."""
+        """Fetch session data from the database asynchronously for Python 3.8."""
         try:
-            response = await self.supabase.table("sessions").select("*").eq("session_id", session_id).execute()
-            if response.error:
-                print(f"Error fetching session data: {response.error.message}")
+            loop = asyncio.get_event_loop()  # For Python 3.7 and 3.8
+            response = await loop.run_in_executor(
+                None,  # Uses the default executor
+                lambda: self.supabase.table("sessions").select("*").eq("session_id", session_id).execute()
+            )
+
+            # Directly access the 'data' attribute for the response content
+            session_data = response.data
+            if session_data:
+                # Assuming you're interested in the first record if there are multiple
+                return session_data[0] 
+            else:
+                print("No session data found.")
                 return None
-            return response.data
         except Exception as e:
             print(f"An error occurred while fetching session data: {e}")
-            return None  
+            return None
 
 
-    async def get_user_id(self, sid):
-        session_data = await self.fetch_session_data(sid)
+    async def get_user_id(self, session_id):
+        session_data = await self.fetch_session_data(session_id)
         return session_data[0].get('user_id') if session_data else None
 
-    async def get_thread_id(self, sid):
-        session_data = await self.fetch_session_data(sid)
-        return session_data[0].get('thread_id') if session_data else None
+    async def get_thread_id(self, session_id):
+        try:
+            print(f"Trying to get thread_id with session: {session_id} ")
+            response =  self.supabase.table("sessions").select("*").eq("session_id", session_id).execute()
+            
+            # Assuming response.data contains the results
+            session_data = response.data
+           
+            # Check if session_data is a list and not empty before accessing
+            if isinstance(session_data, list) and len(session_data) > 0:
+                print(f"Retrieved value from DB get_thread_id: {session_data[0].get('thread_id')} ")
+                return session_data[0].get('thread_id')
+            else:
+                # Handle the case where no results are found or session_data is not as expected
+                print(f"No session data found for session_id: {session_id}")
+                return None
+        except Exception as e:
+            print(f"An error occurred while fetching session data: {e}")
+            return None
 
-    async def get_assistant_id(self, sid):
-        session_data = await self.fetch_session_data(sid)
-        return session_data[0].get('assistant_id') if session_data else None
+    async def get_assistant_id(self, session_id):
+        try:
+            response =  self.supabase.table("sessions").select("*").eq("session_id", session_id).execute()
+            
+            # Assuming response.data contains the results
+            session_data = response.data
 
-    async def get_session_id(self, sid):
+            # Check if session_data is a list and not empty before accessing
+            if isinstance(session_data, list) and len(session_data) > 0:
+                return session_data[0].get('assistant_id')
+            else:
+                # Handle the case where no results are found or session_data is not as expected
+                print(f"No session data found for session_id: {session_id}")
+                return None
+        except Exception as e:
+            print(f"An error occurred while fetching session data: {e}")
+            return None
+
+    async def get_session_id(self, session_id):
         # In this context, get_session_id might not be necessary since you already have sid.
         # But if you need to validate its existence or fetch it for some reason, here's how:
-        session_data = await self.fetch_session_data(sid)
-        return sid if session_data else None   
+        session_data = await self.fetch_session_data(session_id)
+        return session_id if session_data else None   

@@ -47,19 +47,49 @@ document.addEventListener('DOMContentLoaded', () => {
     console.log('URL search parameters:', params.toString());
     const userIdFromUrl = params.get('user_id');
     const nameFromUrl = params.get('assistant_name');
-    const sessionFromUrl = params.get('session_id');
+    const sesionFromUrl = params.get('session_id');
     
     console.log('Extracted user_ID from URL:', userIdFromUrl);
-    console.log('Extracted sesssion_ID from URL:', sessionFromUrl);
+    console.log('Extracted sesssion_ID from URL:', sesionFromUrl);
     console.log('Extracted assistant name from URL:', nameFromUrl);
  
      // Define your elements first
      const infoPanel = document.getElementById('info-panel');
+    //  const infoPanelBtn = document.getElementById('info-panel-btn');
+    //  const togglePanelBtn = document.getElementById('toggle-panel-btn');
+    //  const closePanelBtn = document.getElementById('close-panel-btn');
+ 
+     // Now that we've defined infoPanelBtn, we can attach the event listener
+    //  infoPanelBtn.addEventListener('click', function() {
+    //      // Toggle the info panel visibility
+    //      if (infoPanel.classList.contains('closed')) {
+    //          infoPanel.classList.remove('closed');
+    //      } else {
+    //          infoPanel.classList.add('closed');
+    //      }
+    //  });
+ 
+     // Function to open the panel
+    //  const openPanel = () => {
+    //      infoPanel.classList.remove('closed');
+    //      document.getElementById('toggle-container').style.display = 'none';
+    //  };
+ 
+    //  // Function to close the panel
+    //  const closePanel = () => {
+    //      infoPanel.classList.add('closed');
+    //     //  document.getElementById('toggle-container').style.display = 'block';
+    //  };
+ 
+    //  closePanelBtn.addEventListener('click', () => closePanel());
+ 
+    // //  togglePanelBtn.addEventListener('click', () => openPanel());
+   
 
 
 
     // Ensure assistantIdFromUrl is not null or undefined before connecting
-    const queryString = assistantIdFromUrl ? `?assistant_id=${encodeURIComponent(assistantIdFromUrl)}&user_id=${encodeURIComponent(userIdFromUrl)}&session_id=${encodeURIComponent(sessionFromUrl)}` : '';
+    const queryString = assistantIdFromUrl ? `?assistant_id=${encodeURIComponent(assistantIdFromUrl)}&user_id=${encodeURIComponent(userIdFromUrl)}&session_id=${encodeURIComponent(seesionFromUrl)}` : '';
     console.log('Query string for socket connection NEW VERSION:', queryString);
 
     let socketUrl;
@@ -76,33 +106,12 @@ console.log('Full socket URL:', socketUrl);
     // Verify location.port
     console.log('Location port:', location.port);
 
-   
-
-    const socket = io({
-        query: queryString,
-        autoConnect: false,
-    });
-
-    // Manually connect for the first time
-    socket.connect();
-
-    socket.on('connect', () => {
-        console.log('Connected to Socket.IO');
-    });
-
-
+    const socket = io.connect(socketUrl);
     console.log('Attempting to connect to Socket.IO with URL:', socketUrl);
 
 
-socket.on('disconnect', (reason) => {
-    console.log(`Disconnected: ${reason}`);
-    // Handle automatic reconnection for certain scenarios
-    if (reason === 'io server disconnect' || reason === 'io client disconnect') {
-        // Update server-side session handling to manage 'session_id' for reconnection purposes
-        // This is a conceptual step - ensure your server logic uses 'session_id' to re-establish context
-        console.log('Attempting to reconnect...');
-        socket.connect();
-    }
+socket.on('disconnect', () => {
+    console.log('Socket.IO disconnected');
 });
 
 
@@ -134,25 +143,11 @@ socket.on('disconnect', (reason) => {
         if (messageText) {
             console.log("Sending message:", messageText);
             appendMessageToChatWindow('<img src="static/images/avatar-user.webp" alt="Bot" class="avatar bot-avatar">', messageText, true);
-            
-            // Prepare the message data as an object
-            const messageData = {
-                text: messageText,
-                // Add any additional data here
-                session_id: sessionFromUrl, // Replace this with the actual session ID
-                user_id: userIdFromUrl, // Replace this with the actual user ID
-                assistant_id: assistantIdFromUrl,
-                // You can add more fields as needed
-            };
-    
-            // Emit the message event with the messageData object
-            socket.emit('message', messageData);
-    
-            inputField.value = ''; // Clear the input field after sending
-            spinner.style.display = 'inline-block'; // Show spinner or any indicator for message sending
+            socket.emit('message', messageText);
+            inputField.value = '';
+            spinner.style.display = 'inline-block';
         }
     }
-    
 
     function clearChat() {
         const chatWindow = document.querySelector('.chat-window');
@@ -170,7 +165,13 @@ socket.on('disconnect', (reason) => {
         }
     }
 
+    // function updateSettings() {
+    //     const temperature = parseFloat(temperatureInput.value);
+    //     const maxTokens = parseInt(maxTokensInput.value, 10);
 
+    //     console.log("Updating settings:", { temperature, maxTokens });
+    //     socket.emit('update_settings', { temperature, maxTokens });
+    // }
 
     document.getElementById('send-button').addEventListener('click', sendMessage);
     document.getElementById('message-text').addEventListener('keypress', (e) => {
@@ -179,7 +180,18 @@ socket.on('disconnect', (reason) => {
             e.preventDefault();
         }
     });
+    // document.getElementById('clear-button').addEventListener('click', clearChat);
+    // document.getElementById('submit-instructions').addEventListener('click', sendInstructions);
 
+    // temperatureInput.addEventListener('input', function() {
+    //     temperatureValueDisplay.textContent = this.value;
+    // });
+
+    // maxTokensInput.addEventListener('input', function() {
+    //     // This event listener is intentionally left empty.
+    // });
+
+    // updateSettingsButton.addEventListener('click', updateSettings);
 
     socket.on('response', (data) => {
         

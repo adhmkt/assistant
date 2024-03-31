@@ -45,7 +45,7 @@ class SessionManager:
         self.thread_to_sid = {}
         self.user_ids = {}
 
-    async def create_thread_for_sid(self, sid, assistant_id, user_id):
+    async def create_thread_for_sid(self, sid, assistant_id, user_id, session_id):
         try:
             loop = asyncio.get_running_loop()
             # Assuming client.beta.threads.create returns a Thread-like object
@@ -55,6 +55,14 @@ class SessionManager:
             self.user_assistant_ids[sid] = assistant_id
             self.user_ids[sid] = user_id 
             self.thread_to_sid[thread.id if hasattr(thread, 'id') else None] = sid
+            database_manager = DatabaseManager()
+            
+            await database_manager.save_session_data(
+                        session_id=session_id,
+                        user_id=user_id,
+                        assistant_id=assistant_id,
+                        thread_id=thread.id   # No thread_id yet
+                    )
             print(f"Thread created for new user: {thread.id if hasattr(thread, 'id') else 'Unknown ID'} with SID: {sid}")
         except Exception as e:
             print(f"Error creating thread for SID {sid}: {e}")
@@ -158,25 +166,23 @@ async def login():
         assistant_name = (await request.form)['assistant_name']
         
         print(f"Captured on login POST: assistant_id={assistant_id}, assistant_name={assistant_name}")  # Debug print
-        
+        _session_id = str(uuid.uuid4())
+        encoded_session_id = quote(_session_id)
         email = (await request.form)['email']
         password = (await request.form)['password']
+
+        print(f"Debugging Values BEFORE LOGIN:")
+        print(f"email: {email}")  # Use the actual user_id from your users table or authentication response
+        print(f"password: {password}")
+        print(f"session_id: {_session_id}")
+        
         database_manager = DatabaseManager()
-        user_id = await database_manager.do_login(email, password)
+        user_id = await database_manager.do_login(email, password, _session_id, assistant_id)
 
         if user_id:
             # session['user_id'] = user_id  # Store user_id in session to indicate authentication
 
-            _session_id = str(uuid.uuid4())
-            encoded_session_id = quote(_session_id)
-
             
-            await database_manager.save_session_data(
-                    session_id=_session_id,
-                    user_id=user_id,
-                    assistant_id=assistant_id,
-                    thread_id=None  # No thread_id yet
-                )
 
             # Construct redirect URL using the actual assistant_id and assistant_name captured from the request
             redirect_url = url_for('index', assistant_id=assistant_id) + \
@@ -287,24 +293,28 @@ async def submit_form():
 @sio.event
 async def connect(sid, environ):
     # print('Socket.IO connected')
-    await sio.enter_room(sid, room=sid)
+    
+    
     query_string = environ.get('QUERY_STRING', '')
     parsed_query = parse_qs(query_string)
     print(f'Query String = {query_string}')
     print(f'Parsed Query = {parsed_query}')
 
+    session_id = parsed_query.get('session_id', ['default_session_id'])[0] 
+    await sio.enter_room(sid, room=session_id)
     # print(f'Query String = {query_string}')
     
     # print(f'Parsed String = {parsed_query}')
     assistant_id = parsed_query.get('assistant_id', ['default_assistant_id'])[0]  # Example default ID
     user_id = parsed_query.get('user_id', ['default_user_id'])[0] 
-    session_id = parsed_query.get('session_id', ['default_user_id'])[0] 
+    
     print(f"USER ID AT CONNECT:  {user_id}")
     print(f"PARSED QUERY:  {parsed_query}")
     print(f"session_id at connect:  {session_id}")
     # print(f'assistant_id = {assistant_id}')
     # print('Tracing Line 118')
-    await session_manager.create_thread_for_sid(sid, assistant_id,user_id)
+    if user_id != 'default_user_id':
+        await session_manager.create_thread_for_sid(sid, assistant_id,user_id, session_id)
 
 @sio.event
 async def disconnect(sid):
@@ -313,14 +323,25 @@ async def disconnect(sid):
 
 @sio.event
 async def message(sid, data):
-    # print('Received message:', data)
-    thread_id = session_manager.get_thread_id(sid)
+    print('Received message:', data)
+    session_id = data.get('session_id', None)
+    user_id = data.get('user_id', None)
+    assistant_id = data.get('assistant_id', None)
+    print('Received data 12345 session_id:', session_id)
+    print('Received data 12345 user_id:', user_id)
+    print('Received data 12345 assistant_id:', assistant_id)
+
+    database_manager = DatabaseManager()
+    
+    thread_id = await database_manager.get_thread_id(session_id)
+    print('Received thread_id from DB:', thread_id)
+
     if thread_id:
-        assistant_id = session_manager.get_assistant_id(sid)
         
-        await send_bot_response(thread_id, data, sid, assistant_id)
+        
+        await send_bot_response(thread_id, data, sid, assistant_id, session_id, user_id)
     else:
-        await sio.emit('response', {'response': "No active thread found. Please reconnect."}, room=sid)
+        await sio.emit('response', {'response': "No active thread found. Please reconnect."}, room=session_id)
 
 # handled_actions = {}
 
@@ -349,15 +370,22 @@ def clean_prompt(response_text):
         # Return an empty string or error message if the markers are not found
         return "Prompt could not be extracted."
 
-async def get_bot_response(thread_id, user_id, message, assistant_id, client):
+async def get_bot_response(thread_id, user_id, message, assistant_id, client, session_id):
     # print(f'Message is : {message}')
     try:
         
         # user_id = 'gfergergeeerge'
-        session_id =1
+        
         data_manager = DatabaseManager()
         speaker = "user"
         print(f"MY USER ID:  {user_id}")
+        print(f"Debugging Values BEFORE LOGIN FROM BOT:")
+        print(f"app_user: {user_id}")  # Use the actual user_id from your users table or authentication response
+        print(f"message: {message}")
+        print(f"thread_id: {thread_id}")
+        print(f"session_id: {session_id}")
+        print(f"speaker: {speaker}")
+        print(f"assistant_id: {assistant_id}")
 
         await data_manager.save_chat_conversation(user_id=user_id,thread_id=thread_id,session_id=session_id,message=message, speaker=speaker, assistant_id=assistant_id)
     
@@ -437,21 +465,26 @@ async def get_bot_response(thread_id, user_id, message, assistant_id, client):
         return "Sorry, an error occurred. Please try again later."
 
 
-async def send_bot_response(thread_id, message, sid , assistant_id):
+async def send_bot_response(thread_id, data, sid , assistant_id, session_id, user_id):
+
+    message_text = data["text"]
+      
    
-    assistant_id = session_manager.get_assistant_id(sid)  # Make sure to call the method with sid
-    user_id = session_manager.get_user_id(sid)
+    database_manager = DatabaseManager()
+
+    # assistant_id = session_manager.get_assistant_id(sid)  # Make sure to call the thod with sid
+    user_id = await database_manager.get_user_id(sid)
     # print("FROM send_bot_response, line 229 , assistant_ID = ", assistant_id)
     
     if assistant_id:
 
         
         
-        response = await get_bot_response(thread_id, user_id, message, assistant_id, client)
-        await sio.emit('response', {'response': response}, room=sid)
+        response = await get_bot_response(thread_id, user_id, message_text, assistant_id, client, session_id)
+        await sio.emit('response', {'response': response}, room=session_id)
     else:
         
-        await sio.emit('response', {'response': "Assistant ID not set."}, room=sid)
+        await sio.emit('response', {'response': "Assistant ID not set."}, room=session_id)
 
 
 
