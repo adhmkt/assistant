@@ -64,9 +64,9 @@ document.addEventListener('DOMContentLoaded', () => {
 
     let socketUrl;
     if (location.port) {
-        socketUrl = `http://${document.domain}:${location.port}${queryString}`;
+        socketUrl = `https://${document.domain}:${location.port}${queryString}`;
     } else {
-        socketUrl = `http://${document.domain}${queryString}`;
+        socketUrl = `https://${document.domain}${queryString}`;
 }
 console.log('Full socket URL:', socketUrl);
     console.log('Full socket URL:', socketUrl);
